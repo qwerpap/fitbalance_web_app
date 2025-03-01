@@ -2,20 +2,19 @@ package com.example.features.register
 
 import com.example.cache.InMemoryCache
 import com.example.cache.TokenCache
-import com.example.features.login.LoginResponceRemote
 import com.example.utils.isValidEmail
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import java.util.UUID
 
 fun Application.configureRegisterRouting() {
     routing {
-        get("/register") {
-            val receive = call.receive(RegisterReceiveRemote:: class)
+        post("/register") {
+            val receive = call.receive<RegisterReceiveRemote>()
             if (!receive.email.isValidEmail()) {
                 call.respond(HttpStatusCode.BadRequest, "Email is not valid")
             }
