@@ -10,14 +10,6 @@ import io.ktor.server.cio.CIO
 import org.jetbrains.exposed.sql.Database
 
 fun Application.module() {
-    configureRouting()
-    configureLoginRouting()
-    configureRegisterRouting()
-    configureSerialization()
-}
-
-
-fun main() {
 
     Database.connect(
         url = "jdbc:postgresql://localhost:5432/fitbalance",
@@ -26,16 +18,55 @@ fun main() {
         password = "salfetka5"
     )
 
-//    // Создание и вставка тестового пользователя
+    //place for CRUT
+    Users.deleteUser("test_user")
+
+//Users.deleteUser("testik")
+
+
+    configureRouting()
+    configureLoginRouting()
+    configureRegisterRouting()
+    configureSerialization()
+}
+
+
+fun main() {
+    // Запуск сервера
+    embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)
+}
+
+
+
+//    // Создание и вставка пользователя
 //    val user = UserDTO(
 //        login = "testik",
 //        password = "testik",
 //        email = "testik@example.com"
 //    )
 //    Users.insert(user)
-//    println("Пользователь добавлен!")
 
 
-    // Запуск сервера
-    embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)
-}
+
+
+//    // обновляет данные пользователя по логину
+//    val updatedUser = UserDTO(
+//        login = "existingLogin",
+//        password = "newPassword",
+//        email = "newEmail@example.com"
+//    )
+//    Users.updateUser("existingLogin", updatedUser)
+
+
+
+
+//    // удаляет пользователя по логину
+//fun deleteUser(login: String) {
+//    transaction {
+//        Users.deleteWhere { Users.login eq login }
+//    }
+//}
+
+//Users.deleteUser("testik")
+
+

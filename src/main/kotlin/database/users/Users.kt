@@ -3,8 +3,10 @@ package com.example.database.users
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 object Users: Table("users") {
     private val login = Users.varchar("login", 25)
@@ -12,7 +14,8 @@ object Users: Table("users") {
     private val email = Users.varchar("email", 25)
 
     //CRUT
-    fun insert(userDTO: UserDTO) {
+
+    fun insert(userDTO: UserDTO) {                           //Create -> добавляет нового пользователя в таблицу
         transaction {
             Users.insert {
                 it[login] = userDTO.login
@@ -22,7 +25,8 @@ object Users: Table("users") {
         }
     }
 
-    fun fetchUser(login: String): UserDTO? {
+
+    fun fetchUser(login: String): UserDTO? {                  //Read -> возвращает пользователя по логину (проверка)
         return try {
             transaction {
                 val userModel = Users.select(Users.login eq login).singleOrNull()
@@ -38,4 +42,27 @@ object Users: Table("users") {
             null
         }
     }
+
+
+    fun updateUser(
+        login: String,
+        newUserDTO: UserDTO
+    ) {         //Updata -> обновляет данные пользователя по логину
+        transaction {
+            Users.update({ Users.login eq login }) {
+                it[password] = newUserDTO.password
+                it[email] = newUserDTO.email ?: ""
+            }
+        }
+    }
+
+
+    fun deleteUser(login: String) {
+        transaction {
+            Users.deleteWhere { Users.login eq login }
+        }
+    }
+
 }
+
+
