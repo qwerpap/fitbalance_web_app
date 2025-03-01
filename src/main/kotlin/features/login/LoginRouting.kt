@@ -16,7 +16,6 @@ fun Application.configureLoginRouting() {
         post("/login") {
             val receive = call.receive<LoginReceiveRemote>()
             val first = InMemoryCache.userList.firstOrNull { it.login == receive.login }
-g
             if (first == null) {
                 call.respond(HttpStatusCode.BadRequest, "User not found")
             } else

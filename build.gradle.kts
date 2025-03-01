@@ -1,3 +1,5 @@
+val ktor_version: String by project
+val exposed_version: String by project
 
 plugins {
     application
@@ -20,8 +22,17 @@ repositories {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+
+    implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
+
+    implementation("io.ktor:ktor-server-cio:$ktor_version")
+
+    implementation("org.postgresql:postgresql:42.2.20")
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.netty)
