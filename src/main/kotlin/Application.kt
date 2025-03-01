@@ -18,6 +18,7 @@ fun main() {
     Database.connect(
         url = "jdbc:postgresql://localhost:5432/fitbalance",
         driver = "org.postgresql.Driver",
+        user = "posgres",
         password = "salfetka5"
     )
 
