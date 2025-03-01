@@ -14,7 +14,7 @@ fun Application.configureLoginRouting() {
     routing {
         get("/login") {
             val receive = call.receive(LoginReceiveRemote:: class)
-            if (InMemoryCache.usergList.map { it.login }.contains(receive.login)) {
+            if (InMemoryCache.userList.map { it.login }.contains(receive.login)) {
                 val token = UUID.randomUUID().toString()
                 InMemoryCache.token.add(TokenCache(login = receive.login, token = token))
                 call.respond(LoginResponceRemote(token = token))
