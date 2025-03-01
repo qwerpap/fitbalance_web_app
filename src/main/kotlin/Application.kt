@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.features.login.configureLoginRouting
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -7,6 +8,7 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    configureSerialization()
     configureRouting()
+    configureLoginRouting()
+    configureSerialization()
 }
