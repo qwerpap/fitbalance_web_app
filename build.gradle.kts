@@ -1,7 +1,8 @@
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.ktor)
+    application
+    kotlin("jvm") version "2.1.10"
+    kotlin("plugin.serialization") version "2.1.10"
 }
 
 group = "com.example"
@@ -19,6 +20,8 @@ repositories {
 }
 
 dependencies {
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.netty)
