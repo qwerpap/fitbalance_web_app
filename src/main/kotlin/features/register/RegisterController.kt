@@ -9,6 +9,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.UUID
 
 class RegisterController (private val call: ApplicationCall) {
@@ -18,19 +19,27 @@ class RegisterController (private val call: ApplicationCall) {
         if (!registerReceiveRemote.email.isValidEmail()) {
             call.respond(HttpStatusCode.BadRequest, "Email is not valid")
         }
-        val userDTO = Users.fetchUser(registerReceiveRemote.login)     //fetchUser починить
+        val userDTO = Users.fetchUser(registerReceiveRemote.login)     //fetchUser починить -> вроде работает
 
         if (userDTO != null) {
             call.respond(HttpStatusCode.Conflict, "User already exists")
         } else {
             val token = UUID.randomUUID().toString()
-            Users.insert(
-                UserDTO(
-                    login = registerReceiveRemote.login,
-                    password = registerReceiveRemote.password,
-                    email = registerReceiveRemote.email
+
+            try {
+                Users.insert(
+                    UserDTO(
+                        login = registerReceiveRemote.login,
+                        password = registerReceiveRemote.password,
+                        email = registerReceiveRemote.email
+                    )
                 )
-            )
+
+            } catch (e: ExposedSQLException) {
+                call.respond(HttpStatusCode.Conflict, "User already exists")
+            }
+
+
 
             Tokens.insert(
                 TokenDTO(
@@ -44,3 +53,4 @@ class RegisterController (private val call: ApplicationCall) {
         }
     }
 }
+
