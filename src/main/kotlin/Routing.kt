@@ -90,10 +90,49 @@ fun Application.configureRouting() {
                 call.respondHtml {
                     head {
                         title { +"Login" }
+                        script {
+                            unsafe {
+                                +"""
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const form = document.getElementById('loginForm');
+                        form.addEventListener('submit', async function(event) {
+                            event.preventDefault();
+
+                            // Собираем данные из формы
+                            const login = form.querySelector('input[name="login"]').value;
+                            const password = form.querySelector('input[name="password"]').value;
+
+                            // Отправляем данные в формате JSON
+                            const response = await fetch('/login', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    login: login,
+                                    password: password
+                                }),
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            // Обрабатываем ответ
+                            if (response.ok) {
+                                const result = await response.json();
+                                alert('Login successful!');
+                                window.location.href = '/calculator'; // Перенаправление на страницу с функционалом
+                            } else {
+                                const errorText = await response.text();
+                                alert('Login failed: ' + errorText);
+                            }
+                        });
+                    });
+                    """
+                            }
+                        }
                     }
                     body {
                         h1 { +"Login" }
                         form(action = "/login", method = FormMethod.post) {
+                            attributes["id"] = "loginForm" // Указываем атрибут id
                             label { +"login:" }
                             input(type = InputType.text, name = "login") { }
                             br
@@ -107,6 +146,7 @@ fun Application.configureRouting() {
                     }
                 }
             }
+
         }
     }
 }
