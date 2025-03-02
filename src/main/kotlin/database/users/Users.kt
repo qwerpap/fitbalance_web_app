@@ -10,10 +10,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 object Users: Table() {
-     val login = Users.varchar("login", 25)
-     val password = Users.varchar("password", 25)
-     val email = Users.varchar("email", 25)
-     val role = Users.varchar("role", 25)
+    private val login = Users.varchar("login", 25)
+    private val password = Users.varchar("password", 25)
+    private  val email = Users.varchar("email", 25)
+    private  val role = Users.varchar("role", 25)
 
     //CRUT
 
@@ -68,7 +68,6 @@ object Users: Table() {
             Users.deleteWhere { Users.login eq login }
         }
     }
-
 }
 
 

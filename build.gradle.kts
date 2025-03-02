@@ -41,6 +41,12 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:1.4.7")
 
+    implementation("io.ktor:ktor-server-auth:$ktor_version")
+    implementation("io.ktor:ktor-server-html-builder:$ktor_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.12.0")
+    implementation("io.ktor:ktor-server-resources:$ktor_version")
+
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.netty)

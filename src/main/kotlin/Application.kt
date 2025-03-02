@@ -14,6 +14,7 @@ import io.ktor.server.auth.jwt.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.Config
+import io.ktor.server.http.content.StaticContentConfig
 
 fun Application.module() {
 
@@ -31,11 +32,11 @@ fun Application.module() {
     // Настройка JWT аутентификации
     install(Authentication) {
         jwt("auth-jwt") {
-            realm = "my-realm" // Название realm (можно указать любое)
+            realm = "my-realm"
             verifier(
-                JWT.require(Algorithm.HMAC256("my-very-secure-secret-key-12345")) // Секретный ключ
-                    .withAudience("fitbalance") // Аудитория
-                    .withIssuer("fitbalance_server") // Издатель
+                JWT.require(Algorithm.HMAC256("my-very-secure-secret-key-12345"))
+                    .withAudience("fitbalance")
+                    .withIssuer("fitbalance_server")
                     .build()
             )
             validate { credential ->
@@ -47,7 +48,6 @@ fun Application.module() {
             }
         }
     }
-
 
 
     configureRouting()
