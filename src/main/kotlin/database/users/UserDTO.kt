@@ -4,5 +4,6 @@ package com.example.database.users
 class UserDTO  (
     val login: String,
     val password: String,
-    val email: String?
+    val email: String?,
+    val role: String? = "user" // по умолчанию -> user
 )

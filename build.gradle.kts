@@ -33,6 +33,14 @@ dependencies {
 
     implementation("org.postgresql:postgresql:42.2.20")
 
+
+    implementation("io.ktor:ktor-server-auth-jvm:$ktor_version") // Основной модуль аутентификации
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktor_version") // JWT аутентификация
+
+    implementation("com.auth0:java-jwt:4.4.0")  // Библиотека для работы с JWT (Auth0)
+
+    implementation("ch.qos.logback:logback-classic:1.4.7")
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.netty)

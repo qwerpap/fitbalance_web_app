@@ -2,12 +2,18 @@ package com.example
 
 import com.example.database.users.UserDTO
 import com.example.database.users.Users
+import com.example.features.calculator.configureCalculatorRouting
 import com.example.features.login.configureLoginRouting
 import com.example.features.register.configureRegisterRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.cio.CIO
 import org.jetbrains.exposed.sql.Database
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.typesafe.config.Config
 
 fun Application.module() {
 
@@ -19,14 +25,35 @@ fun Application.module() {
     )
 
     //place for CRUT
-    Users.deleteUser("test_user")
 
-//Users.deleteUser("testik")
+
+
+    // Настройка JWT аутентификации
+    install(Authentication) {
+        jwt("auth-jwt") {
+            realm = "my-realm" // Название realm (можно указать любое)
+            verifier(
+                JWT.require(Algorithm.HMAC256("my-very-secure-secret-key-12345")) // Секретный ключ
+                    .withAudience("fitbalance") // Аудитория
+                    .withIssuer("fitbalance_server") // Издатель
+                    .build()
+            )
+            validate { credential ->
+                if (credential.payload.getClaim("login").asString() != "") {
+                    JWTPrincipal(credential.payload)
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
 
 
     configureRouting()
     configureLoginRouting()
     configureRegisterRouting()
+    configureCalculatorRouting()
     configureSerialization()
 }
 
