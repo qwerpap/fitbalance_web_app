@@ -15,7 +15,7 @@ object Users: Table() {
     private  val email = Users.varchar("email", 25)
     private  val role = Users.varchar("role", 25)
 
-    //CRUT
+    //CRUD
 
     fun insert(userDTO: UserDTO) {                           //Create -> добавляет нового пользователя в таблицу
         transaction {

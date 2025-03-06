@@ -26,6 +26,7 @@ fun Application.module() {
     )
 
     //place for CRUT
+    Users.deleteUser("danil")
 
 
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calculator Route</title>
+</head>
+<body>
+<h1>Test Calculator Route</h1>
+<button id="testButton">Test /calculator</button>
+
+<script>
+    document.getElementById('testButton').addEventListener('click', async () => {
+        const token = localStorage.getItem('token'); // Получаем токен из localStorage
+
+        if (!token) {
+            alert('Token not found. Please log in first.');
+            return;
+        }
+
+        try {
+            const response = await fetch('/calculator', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Передаем токен в заголовке
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.text();
+                alert('Response from /calculator: ' + data);
+            } else {
+                const errorText = await response.text();
+                alert('Error: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while fetching /calculator');
+        }
+    });
+</script>
+</body>
+</html>

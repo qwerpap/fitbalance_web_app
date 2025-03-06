@@ -98,11 +98,9 @@ fun Application.configureRouting() {
                         form.addEventListener('submit', async function(event) {
                             event.preventDefault();
 
-                            // Собираем данные из формы
                             const login = form.querySelector('input[name="login"]').value;
                             const password = form.querySelector('input[name="password"]').value;
 
-                            // Отправляем данные в формате JSON
                             const response = await fetch('/login', {
                                 method: 'POST',
                                 body: JSON.stringify({
@@ -114,11 +112,11 @@ fun Application.configureRouting() {
                                 }
                             });
 
-                            // Обрабатываем ответ
                             if (response.ok) {
                                 const result = await response.json();
                                 alert('Login successful!');
-                                window.location.href = '/calculator'; // Перенаправление на страницу с функционалом
+                                localStorage.setItem('token', result.token); // Сохраняем токен
+                                window.location.href = '/calculator'; // Переход на защищённую страницу
                             } else {
                                 const errorText = await response.text();
                                 alert('Login failed: ' + errorText);
@@ -132,7 +130,7 @@ fun Application.configureRouting() {
                     body {
                         h1 { +"Login" }
                         form(action = "/login", method = FormMethod.post) {
-                            attributes["id"] = "loginForm" // Указываем атрибут id
+                            attributes["id"] = "loginForm"
                             label { +"login:" }
                             input(type = InputType.text, name = "login") { }
                             br
@@ -146,6 +144,7 @@ fun Application.configureRouting() {
                     }
                 }
             }
+
 
         }
     }
