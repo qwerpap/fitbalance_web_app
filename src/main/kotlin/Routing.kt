@@ -116,7 +116,7 @@ fun Application.configureRouting() {
                                 const result = await response.json();
                                 alert('Login successful!');
                                 localStorage.setItem('token', result.token); // Сохраняем токен
-                                window.location.href = '/calculator'; // Переход на защищённую страницу
+                                window.location.href = '/welcome'; // Переход на защищённую страницу
                             } else {
                                 const errorText = await response.text();
                                 alert('Login failed: ' + errorText);
