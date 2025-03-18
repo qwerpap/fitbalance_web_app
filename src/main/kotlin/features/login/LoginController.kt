@@ -11,17 +11,37 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import java.util.UUID
 
-class LoginController (private val call: ApplicationCall) {
-
+class LoginController(private val call: ApplicationCall) {
 
     suspend fun performLogin() {
         val receive = call.receive<LoginReceiveRemote>()
+        println("🔹 Login attempt: ${receive.login}") // Логируем попытку входа
+
         val userDTO = Users.fetchUser(receive.login)
 
         if (userDTO == null) {
-            call.respond(HttpStatusCode.BadRequest, "fun performLogin: User not found")
-        } else if (userDTO.password == receive.password) {
-            val token = UUID.randomUUID().toString()
+            println("❌ User not found: ${receive.login}")
+            call.respond(HttpStatusCode.BadRequest, "User not found")
+            return
+        }
+
+        if (userDTO.password != receive.password) {
+            println("❌ Invalid password for user: ${receive.login}")
+            call.respond(HttpStatusCode.BadRequest, "Invalid password")
+            return
+        }
+
+        try {
+            val secret = "my-very-secure-secret-key-12345"  // Убеждаемся, что ключ задан
+            val token = JWT.create()
+                .withAudience("fitbalance")
+                .withIssuer("fitbalance_server")
+                .withClaim("login", userDTO.login)
+                .withClaim("role", userDTO.role)
+                .sign(Algorithm.HMAC256(secret))  // Проверяем, что алгоритм подписания работает
+
+            println("✅ Token generated successfully: $token")
+
             Tokens.insert(
                 TokenDTO(
                     rowId = UUID.randomUUID().toString(),
@@ -29,37 +49,35 @@ class LoginController (private val call: ApplicationCall) {
                     token = token
                 )
             )
+
             call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
-        } else {
-            call.respond(HttpStatusCode.BadRequest, "Invalid password")
+        } catch (e: Exception) {
+            println("🔥 ERROR: Failed to generate JWT token: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, "Internal server error")
         }
     }
 }
 
 
-//suspend fun performLogin() {
-//    val receive = call.receive<LoginReceiveRemote>()
-//    val userDTO = Users.fetchUser(receive.login)
+//class LoginController (private val call: ApplicationCall) {
+//    suspend fun performLogin() {
+//        val receive = call.receive<LoginReceiveRemote>()
+//        val userDTO = Users.fetchUser(receive.login)
 //
-//    if (userDTO == null) {
-//        call.respond(HttpStatusCode.BadRequest, "User not found")
-//    } else if (userDTO.password == receive.password) {
-//        val token = JWT.create()
-//            .withAudience("fitbalance") // Аудитория
-//            .withIssuer("fitbalance_server") // Издатель
-//            .withClaim("login", userDTO.login) // Добавляем claim с логином
-//            .withClaim("role", userDTO.role) // Добавляем claim с ролью
-//            .sign(Algorithm.HMAC256("my-very-secure-secret-key-12345")) // Подписываем токен
-//
-//        Tokens.insert(
-//            TokenDTO(
-//                rowId = UUID.randomUUID().toString(),
-//                login = receive.login,
-//                token = token
+//        if (userDTO == null) {
+//            call.respond(HttpStatusCode.BadRequest, "fun performLogin: User not found")
+//        } else if (userDTO.password == receive.password) {
+//            val token = UUID.randomUUID().toString()
+//            Tokens.insert(
+//                TokenDTO(
+//                    rowId = UUID.randomUUID().toString(),
+//                    login = receive.login,
+//                    token = token
+//                )
 //            )
-//        )
-//
-//        call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
-//    } else {
-//        call.respond(HttpStatusCode.BadRequest, "Invalid password")
+//            call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
+//        } else {
+//            call.respond(HttpStatusCode.BadRequest, "Invalid password")
+//        }
 //    }
+//}

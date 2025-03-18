@@ -15,6 +15,10 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.Config
 import io.ktor.server.http.content.StaticContentConfig
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.request.uri
+import org.slf4j.event.Level
+import org.slf4j.LoggerFactory
 
 fun Application.module() {
 
@@ -26,24 +30,28 @@ fun Application.module() {
     )
 
     //place for CRUT
-    Users.deleteUser("danil")
+
+    install(CallLogging) {
+        level = Level.INFO // Выберите уровень логирования: TRACE, DEBUG, INFO, WARN, ERROR
+        format { call ->
+            "Request: ${call.request.uri}"
+        }
+    }
 
 
 
-    // Настройка JWT аутентификации
+    val log = LoggerFactory.getLogger("Application")
+
     install(Authentication) {
         jwt("auth-jwt") {
-            realm = "my-realm"
-            verifier(
-                JWT.require(Algorithm.HMAC256("my-very-secure-secret-key-12345"))
-                    .withAudience("fitbalance")
-                    .withIssuer("fitbalance_server")
-                    .build()
-            )
+            realm = "fitbalance"
+            verifier(JWT.require(Algorithm.HMAC256("my-very-secure-secret-key-12345")).build())
             validate { credential ->
-                if (credential.payload.getClaim("login").asString() != "") {
+                if (credential.payload.getClaim("login").asString() != null) {
+                    log.info("JWT validation successful: ${credential.payload}")
                     JWTPrincipal(credential.payload)
                 } else {
+                    log.warn("JWT validation failed: Invalid token or missing claims")
                     null
                 }
             }

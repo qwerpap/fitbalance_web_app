@@ -46,6 +46,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.12.0")
     implementation("io.ktor:ktor-server-resources:$ktor_version")
 
+    implementation("com.auth0:java-jwt:4.4.0")
+
+    implementation("io.ktor:ktor-server-call-logging:$ktor_version")
+
+    implementation("org.slf4j:slf4j-api:1.7.32") // Зависимость для SLF4J
+    implementation("ch.qos.logback:logback-classic:1.2.6") // Зависимость для Logback (если используете его)
+
+    implementation("org.slf4j:slf4j-api:1.7.32")
+    implementation("org.slf4j:slf4j-simple:1.7.32")
+
 
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.content.negotiation)
