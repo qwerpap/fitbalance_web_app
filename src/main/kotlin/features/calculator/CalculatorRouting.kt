@@ -20,11 +20,15 @@ fun Application.configureCalculatorRouting() {
                 val role = principal?.payload?.getClaim("role")?.asString()
 
                 if (role == "user") {
-                    // Здесь можно вернуть HTML-страницу с калькулятором
                     call.respondText("Welcome to the calculator, $login!")
                 } else {
                     call.respond(HttpStatusCode.Forbidden, "Access denied")
                 }
+            }
+
+            post("/calculate") {
+                val calculatorController = CalculatorController(call)
+                calculatorController.calculate()
             }
         }
     }

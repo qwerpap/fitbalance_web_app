@@ -11,4 +11,3 @@ data class UserInfo(
     val goal: String, // "lose", "maintain", "gain"
     val activityLevel: String // "low", "medium", "high"
 )
-
