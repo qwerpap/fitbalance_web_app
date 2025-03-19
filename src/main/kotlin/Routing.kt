@@ -116,7 +116,7 @@ fun Application.configureRouting() {
                                 const result = await response.json();
                                 alert('Login successful!');
                                 localStorage.setItem('token', result.token);
-                                window.location.href = '/welcome';
+                                window.location.href = '/calculate';
                             } else {
                                 const errorText = await response.text();
                                 alert('Login failed: ' + errorText);
