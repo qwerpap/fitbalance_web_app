@@ -58,26 +58,3 @@ class LoginController(private val call: ApplicationCall) {
     }
 }
 
-
-//class LoginController (private val call: ApplicationCall) {
-//    suspend fun performLogin() {
-//        val receive = call.receive<LoginReceiveRemote>()
-//        val userDTO = Users.fetchUser(receive.login)
-//
-//        if (userDTO == null) {
-//            call.respond(HttpStatusCode.BadRequest, "fun performLogin: User not found")
-//        } else if (userDTO.password == receive.password) {
-//            val token = UUID.randomUUID().toString()
-//            Tokens.insert(
-//                TokenDTO(
-//                    rowId = UUID.randomUUID().toString(),
-//                    login = receive.login,
-//                    token = token
-//                )
-//            )
-//            call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
-//        } else {
-//            call.respond(HttpStatusCode.BadRequest, "Invalid password")
-//        }
-//    }
-//}

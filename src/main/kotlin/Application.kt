@@ -31,6 +31,9 @@ fun Application.module() {
 
     //place for CRUT
 
+
+
+
     install(CallLogging) {
         level = Level.INFO // Выберите уровень логирования: TRACE, DEBUG, INFO, WARN, ERROR
         format { call ->
