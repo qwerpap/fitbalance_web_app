@@ -21,8 +21,12 @@ import kotlinx.html.*
 import kotlinx.html.stream.appendHTML
 import java.util.UUID
 import com.auth0.jwt.algorithms.Algorithm
+import com.example.features.calculator.CalculationResultDTO
+import com.example.features.calculator.CalculationResultRepository
 import com.example.features.calculator.CalculatorService
 import com.example.features.calculator.UserInfo
+import com.example.features.calculator.UserInfoDTO
+import com.example.features.calculator.UserInfoRepository
 
 
 fun Application.configureRouting() {
@@ -333,18 +337,70 @@ fun Application.configureRouting() {
             }
         }
         post("/calculate") {
-            val userInfo = try {
-                call.receive<UserInfo>()
+            try {
+                // Получаем данные от клиента
+                val userInfo = try {
+                    call.receive<UserInfo>()
+                } catch (e: Exception) {
+                    println("Error receiving user info: ${e.message}")
+                    call.respond(HttpStatusCode.BadRequest, "Invalid request body")
+                    return@post
+                }
+
+                // Генерируем уникальный ID для пользователя
+                val userId = UUID.randomUUID().toString()
+
+                // Создаем UserInfoDTO
+                val userInfoDTO = UserInfoDTO(
+                    id = userId,
+                    age = userInfo.age,
+                    gender = userInfo.gender,
+                    height = userInfo.height,
+                    weight = userInfo.weight,
+                    goal = userInfo.goal,
+                    activityLevel = userInfo.activityLevel
+                )
+
+                // Сохраняем UserInfoDTO в базу данных
+                try {
+                    UserInfoRepository.insert(userInfoDTO)
+                } catch (e: Exception) {
+                    println("Error inserting user info: ${e.message}")
+                    call.respond(HttpStatusCode.InternalServerError, "Failed to save user info")
+                    return@post
+                }
+
+                // Выполняем расчеты
+                val calculatorService = CalculatorService()
+                val tdee = calculatorService.calculateTDEE(userInfo)
+                val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
+
+                // Создаем CalculationResultDTO
+                val calculationResultDTO = CalculationResultDTO(
+                    id = UUID.randomUUID().toString(),  // Уникальный ID для результата
+                    userId = userId,  // Связываем результат с пользователем
+                    tdee = tdee,
+                    protein = result.protein,
+                    fat = result.fat,
+                    carbs = result.carbs,
+                    recommendedCalories = result.recommendedCalories
+                )
+
+                // Сохраняем CalculationResultDTO в базу данных
+                try {
+                    CalculationResultRepository.insert(calculationResultDTO)
+                } catch (e: Exception) {
+                    println("Error inserting calculation result: ${e.message}")
+                    call.respond(HttpStatusCode.InternalServerError, "Failed to save calculation result")
+                    return@post
+                }
+
+                // Возвращаем результат клиенту
+                call.respond(result)
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request body")
-                return@post
+                println("Unexpected error: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, "Unexpected error occurred")
             }
-
-            val calculatorService = CalculatorService()
-            val tdee = calculatorService.calculateTDEE(userInfo)
-            val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
-
-            call.respond(result)
         }
 
 
