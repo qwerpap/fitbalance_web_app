@@ -1,3 +1,5 @@
+package com.example.features.calculator
+
 import kotlinx.serialization.Serializable
 
 @Serializable

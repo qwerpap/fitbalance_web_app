@@ -12,45 +12,51 @@ import io.ktor.server.response.respond
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import java.util.UUID
 
-class RegisterController (private val call: ApplicationCall) {
+class RegisterController(private val call: ApplicationCall) {
 
     suspend fun registerNewUser() {
         val registerReceiveRemote = call.receive<RegisterReceiveRemote>()
+
         if (!registerReceiveRemote.email.isValidEmail()) {
             call.respond(HttpStatusCode.BadRequest, "Email is not valid")
+            return
         }
-        val userDTO = Users.fetchUser(registerReceiveRemote.login)     //fetchUser починить -> вроде работает
+
+        val userDTO = Users.fetchUser(registerReceiveRemote.login)
 
         if (userDTO != null) {
             call.respond(HttpStatusCode.Conflict, "User already exists")
-        } else {
+            return
+        }
+
+        try {
+            // Генерируем ID для нового пользователя
+            val userId = UUID.randomUUID().toString()
             val token = UUID.randomUUID().toString()
 
-            try {
-                Users.insert(
-                    UserDTO(
-                        login = registerReceiveRemote.login,
-                        password = registerReceiveRemote.password,
-                        email = registerReceiveRemote.email
-                    )
+            Users.insert(
+                UserDTO(
+                    id = userId, // Добавляем сгенерированный ID
+                    login = registerReceiveRemote.login,
+                    password = registerReceiveRemote.password,
+                    email = registerReceiveRemote.email
                 )
-
-            } catch (e: ExposedSQLException) {
-                call.respond(HttpStatusCode.Conflict, "User already exists")
-            }
-
-
+            )
 
             Tokens.insert(
                 TokenDTO(
-                rowId = UUID.randomUUID().toString(),
-                login = registerReceiveRemote.login,
-                token = token
-            )
+                    rowId = UUID.randomUUID().toString(),
+                    userId = userId, // Используем тот же userId
+                    login = registerReceiveRemote.login,
+                    token = token
+                )
             )
 
             call.respond(RegisterResponseRemote(token = token))
+        } catch (e: ExposedSQLException) {
+            call.respond(HttpStatusCode.Conflict, "User already exists")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Registration failed")
         }
     }
 }
-

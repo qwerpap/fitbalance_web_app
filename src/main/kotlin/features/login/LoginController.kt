@@ -20,13 +20,13 @@ class LoginController(private val call: ApplicationCall) {
         val userDTO = Users.fetchUser(receive.login)
 
         if (userDTO == null) {
-            println("❌ User not found: ${receive.login}")
+            println(" User not found: ${receive.login}")
             call.respond(HttpStatusCode.BadRequest, "User not found")
             return
         }
 
         if (userDTO.password != receive.password) {
-            println("❌ Invalid password for user: ${receive.login}")
+            println(" Invalid password for user: ${receive.login}")
             call.respond(HttpStatusCode.BadRequest, "Invalid password")
             return
         }
@@ -36,15 +36,18 @@ class LoginController(private val call: ApplicationCall) {
             val token = JWT.create()
                 .withAudience("fitbalance")
                 .withIssuer("fitbalance_server")
+                .withClaim("userId", userDTO.id)  // Добавлено
                 .withClaim("login", userDTO.login)
                 .withClaim("role", userDTO.role)
-                .sign(Algorithm.HMAC256(secret))  // Проверяем, что алгоритм подписания работает
+                .sign(Algorithm.HMAC256(secret))
 
-            println("✅ Token generated successfully: $token")
+            println("Token generated successfully: $token")
 
+            // В методе performLogin(), где создаётся TokenDTO:
             Tokens.insert(
                 TokenDTO(
                     rowId = UUID.randomUUID().toString(),
+                    userId = userDTO.id, // Добавляем userId из найденного пользователя
                     login = receive.login,
                     token = token
                 )

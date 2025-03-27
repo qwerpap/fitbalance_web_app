@@ -1,6 +1,5 @@
 package com.example.features.calculator
-
-import CalculationResult
+import com.example.features.calculator.CalculationResult
 
 class CalculatorService {
 

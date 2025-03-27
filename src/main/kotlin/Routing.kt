@@ -32,6 +32,7 @@ fun Application.configureRouting() {
             call.respondText("Welcome to the main page!")
         }
 
+
         // Страница регистрации
         get("/register") {
             call.respondHtml {
@@ -150,235 +151,154 @@ fun Application.configureRouting() {
         }
 // Обработка POST-запроса для логина
         post("/login") {
-            val receive = try {
-                call.receive<LoginReceiveRemote>()
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request body")
-                return@post
-            }
-
-            // Ищем пользователя по логину
-            val userDTO = Users.fetchUser(receive.login)
-
-            if (userDTO == null) {
+            val receive = call.receive<LoginReceiveRemote>()
+            val userDTO = Users.fetchUser(receive.login) ?: run {
                 call.respond(HttpStatusCode.NotFound, "User not found")
                 return@post
             }
 
-            // Проверка пароля
             if (userDTO.password != receive.password) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid password")
                 return@post
             }
 
-            // Генерация JWT токена
             val token = JWT.create()
                 .withAudience("fitbalance")
                 .withIssuer("fitbalance_server")
                 .withClaim("login", userDTO.login)
+                .withClaim("userId", userDTO.id)  // Добавляем userId
                 .withClaim("role", userDTO.role ?: "user")
                 .sign(Algorithm.HMAC256("my-very-secure-secret-key-12345"))
 
-            // Сохраняем токен в куки на 1 день
-            call.response.cookies.append("JWT", token, maxAge = 60 * 60 * 24)
-
-            // Запись токена в базу данных
-            Tokens.insert(
-                TokenDTO(
-                    rowId = UUID.randomUUID().toString(),
-                    login = receive.login,
-                    token = token
-                )
+            // Устанавливаем HTTP-only cookie
+            call.response.cookies.append(
+                name = "JWT",
+                value = token,
+                secure = false,  // true в production
+                httpOnly = true,
+                path = "/",
+                maxAge = 86400
             )
 
-            // Ответ с токеном и ролью
             call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
         }
 
 
-        // Защищенный маршрут для /welcome
-        authenticate("auth-jwt") {
-            get("/welcome") {
-                val principal = call.principal<JWTPrincipal>()
-                if (principal != null) {
-                    val login = principal.payload.getClaim("login").asString()
-                    call.respondHtml {
-                        head {
-                            title { +"Welcome" }
-                            script {
-                                unsafe {
-                                    +"""
-                            document.addEventListener('DOMContentLoaded', function() {
-                                // Проверка, есть ли токен в localStorage
-                                const token = localStorage.getItem('token');
-                
-                                if (token) {
-                                    fetch('/welcome', {
-                                        method: 'GET',
-                                        headers: {
-                                            'Authorization': 'Bearer ' + token // Добавляем токен в заголовок
-                                        }
-                                    })
-                                    .then(response => {
-                                        if (response.ok) {
-                                            return response.text();
-                                        } else {
-                                            throw new Error('You are not authorized');
-                                        }
-                                    })
-                                    .then(data => {
-                                        document.body.innerHTML = data; // Делаем что-то с полученным HTML
-                                    })
-                                    .catch(error => {
-                                        alert(error.message);
-                                        window.location.href = '/login'; // Перенаправляем на страницу логина, если ошибка
-                                    });
-                                } else {
-                                    window.location.href = '/login'; // Перенаправляем на страницу логина, если токен отсутствует
+
+
+
+
+        get("/calculate") {
+            call.respondHtml {
+                head {
+                    title { +"Calculate" }
+                    script {
+                        unsafe {
+                            +"""
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const form = document.getElementById('calculateForm');
+                        form.addEventListener('submit', async function(event) {
+                            event.preventDefault();
+
+                            const age = form.querySelector('input[name="age"]').value;
+                            const gender = form.querySelector('select[name="gender"]').value;
+                            const height = form.querySelector('input[name="height"]').value;
+                            const weight = form.querySelector('input[name="weight"]').value;
+                            const goal = form.querySelector('select[name="goal"]').value;
+                            const activityLevel = form.querySelector('select[name="activityLevel"]').value;
+
+                            const response = await fetch('/calculate', {
+                                method: 'POST',
+                                body: JSON.stringify({ age, gender, height, weight, goal, activityLevel }),
+                                headers: { 
+                                    'Content-Type': 'application/json'
                                 }
                             });
-                            """
-                                }
+
+                            if (response.ok) {
+                                const result = await response.json();
+                                alert('Calculation successful!');
+                                // Здесь можно отобразить результат на странице
+                                console.log(result);
+                            } else {
+                                const errorText = await response.text();
+                                alert('Calculation failed: ' + errorText);
                             }
-                        }
-                        body {
-                            h1 { +"Welcome, $login!" }
-                            p { +"You are successfully logged in." }
-                            a(href = "/") { +"Go to main page" }
+                        });
+                    });
+                    """
                         }
                     }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Token is invalid or missing")
+                }
+                body {
+                    h1 { +"Calculate Your Nutrition" }
+                    form {
+                        attributes["id"] = "calculateForm"
+                        label { +"Age: " }
+                        input(type = InputType.number, name = "age")
+                        br
+                        label { +"Gender: " }
+                        select {
+                            attributes["name"] = "gender"
+                            option { +"Male" }
+                            option { +"Female" }
+                        }
+                        br
+                        label { +"Height (cm): " }
+                        input(type = InputType.number, name = "height")
+                        br
+                        label { +"Weight (kg): " }
+                        input(type = InputType.number, name = "weight")
+                        br
+                        label { +"Goal: " }
+                        select {
+                            attributes["name"] = "goal"
+                            option { +"Lose" }
+                            option { +"Maintain" }
+                            option { +"Gain" }
+                        }
+                        br
+                        label { +"Activity Level: " }
+                        select {
+                            attributes["name"] = "activityLevel"
+                            option { +"Low" }
+                            option { +"Medium" }
+                            option { +"High" }
+                        }
+                        br
+                        button(type = ButtonType.submit) { +"Calculate" }
+                    }
                 }
             }
         }
 
-
-        authenticate("auth-jwt") {
-            get("/calculate") {
-                val principal = call.principal<JWTPrincipal>()
-                if (principal != null) {
-                    val login = principal.payload.getClaim("login").asString()
-                    call.respondHtml {
-                        head {
-                            title { +"Calculate" }
-                            script {
-                                unsafe {
-                                    +"""
-                            document.addEventListener('DOMContentLoaded', function() {
-                                // Проверяем наличие токена в localStorage
-                                const token = localStorage.getItem('token');
-                                if (!token) {
-                                    alert('You need to login first');
-                                    window.location.href = '/login';
-                                    return;
-                                }
-
-                                const form = document.getElementById('calculateForm');
-                                form.addEventListener('submit', async function(event) {
-                                    event.preventDefault();
-
-                                    const age = form.querySelector('input[name="age"]').value;
-                                    const gender = form.querySelector('select[name="gender"]').value;
-                                    const height = form.querySelector('input[name="height"]').value;
-                                    const weight = form.querySelector('input[name="weight"]').value;
-                                    const goal = form.querySelector('select[name="goal"]').value;
-                                    const activityLevel = form.querySelector('select[name="activityLevel"]').value;
-
-                                    const response = await fetch('/calculate', {
-                                        method: 'POST',
-                                        body: JSON.stringify({ age, gender, height, weight, goal, activityLevel }),
-                                        headers: { 
-                                            'Content-Type': 'application/json',
-                                            'Authorization': 'Bearer ' + token
-                                        }
-                                    });
-
-                                    if (response.ok) {
-                                        const result = await response.json();
-                                        alert('Calculation successful!');
-                                        // Здесь можно отобразить результат на странице
-                                        console.log(result);
-                                    } else {
-                                        const errorText = await response.text();
-                                        alert('Calculation failed: ' + errorText);
-                                    }
-                                });
-                            });
-                            """
-                                }
-                            }
-                        }
-                        body {
-                            h1 { +"Calculate Your Nutrition" }
-                            form {
-                                attributes["id"] = "calculateForm"
-                                label { +"Age: " }
-                                input(type = InputType.number, name = "age")
-                                br
-                                label { +"Gender: " }
-                                select {
-                                    attributes["name"] = "gender"
-                                    option { +"Male" }
-                                    option { +"Female" }
-                                }
-                                br
-                                label { +"Height (cm): " }
-                                input(type = InputType.number, name = "height")
-                                br
-                                label { +"Weight (kg): " }
-                                input(type = InputType.number, name = "weight")
-                                br
-                                label { +"Goal: " }
-                                select {
-                                    attributes["name"] = "goal"
-                                    option { +"Lose" }
-                                    option { +"Maintain" }
-                                    option { +"Gain" }
-                                }
-                                br
-                                label { +"Activity Level: " }
-                                select {
-                                    attributes["name"] = "activityLevel"
-                                    option { +"Low" }
-                                    option { +"Medium" }
-                                    option { +"High" }
-                                }
-                                br
-                                button(type = ButtonType.submit) { +"Calculate" }
-                            }
-                        }
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Token is invalid or missing")
+        post("/calculate") {
+            try {
+                val userInfo = try {
+                    call.receive<UserInfo>()
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, "Invalid request body")
+                    return@post
                 }
-            }
 
-            post("/calculate") {
-                val principal = call.principal<JWTPrincipal>()
-                if (principal != null) {
-                    try {
-                        val userInfo = try {
-                            call.receive<UserInfo>()
-                        } catch (e: Exception) {
-                            call.respond(HttpStatusCode.BadRequest, "Invalid request body")
-                            return@post
-                        }
+                val calculatorService = CalculatorService()
 
-                        // Используем login из токена как userId
-                        val userId = principal.payload.getClaim("login").asString()
+                // Рассчитываем TDEE
+                val tdee = calculatorService.calculateTDEE(userInfo)
 
-                        // Остальной код обработчика...
+                // Рассчитываем макронутриенты
+                val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
 
-                    } catch (e: Exception) {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            "Unexpected error occurred"
-                        )
-                    }
-                } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Token is invalid or missing")
-                }
+                // Возвращаем результат
+                call.respond(result)
+
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid input data")
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.InternalServerError,
+                    "Unexpected error occurred"
+                )
             }
         }
 

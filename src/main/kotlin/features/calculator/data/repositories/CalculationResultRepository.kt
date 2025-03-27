@@ -2,65 +2,80 @@ package com.example.features.calculator.data.repositories
 
 import com.example.features.calculator.CalculationResultDTO
 import com.example.features.calculator.CalculationResultTable
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 
 object CalculationResultRepository {
 
-    // CREATE
-    fun insert(calculationResultDTO: CalculationResultDTO) {
-        transaction {
+    fun create(calculation: CalculationResultDTO): CalculationResultDTO {
+        return transaction {
             CalculationResultTable.insert {
-                it[id] = calculationResultDTO.id
-                it[userId] = calculationResultDTO.userId
-                it[tdee] = calculationResultDTO.tdee
-                it[protein] = calculationResultDTO.protein
-                it[fat] = calculationResultDTO.fat
-                it[carbs] = calculationResultDTO.carbs
-                it[recommendedCalories] = calculationResultDTO.recommendedCalories
-            }
+                it[id] = calculation.id
+                it[userId] = calculation.userId
+                it[tdee] = calculation.tdee
+                it[protein] = calculation.protein
+                it[fat] = calculation.fat
+                it[carbs] = calculation.carbs
+                it[recommendedCalories] = calculation.recommendedCalories
+            }.resultedValues?.first()?.let { rowToCalculation(it) } ?: calculation
         }
     }
 
-//    // READ
-//    fun fetchCalculationResult(id: String): CalculationResultDTO? {
-//        return transaction {
-//            CalculationResultTable.select { CalculationResultTable.id eq id }.singleOrNull()?.let {
-//                CalculationResultDTO(
-//                    id = it[CalculationResultTable.id],
-//                    userId = it[CalculationResultTable.userId],
-//                    tdee = it[CalculationResultTable.tdee],
-//                    protein = it[CalculationResultTable.protein],
-//                    fat = it[CalculationResultTable.fat],
-//                    carbs = it[CalculationResultTable.carbs],
-//                    recommendedCalories = it[CalculationResultTable.recommendedCalories]
-//                )
-//            }
-//        }
-//    }
-
-    // UPDATE
-    fun update(calculationResultDTO: CalculationResultDTO) {
-        transaction {
-            CalculationResultTable.update({ CalculationResultTable.id eq calculationResultDTO.id }) {
-                it[userId] = calculationResultDTO.userId
-                it[tdee] = calculationResultDTO.tdee
-                it[protein] = calculationResultDTO.protein
-                it[fat] = calculationResultDTO.fat
-                it[carbs] = calculationResultDTO.carbs
-                it[recommendedCalories] = calculationResultDTO.recommendedCalories
-            }
+    fun read(id: String): CalculationResultDTO? {
+        return transaction {
+            CalculationResultTable
+                .selectAll()
+                .where { CalculationResultTable.id eq id }
+                .map { rowToCalculation(it) }
+                .firstOrNull()
         }
     }
 
-    // DELETE
-    fun delete(id: String) {
-        transaction {
-            CalculationResultTable.deleteWhere { CalculationResultTable.id eq id }
+
+
+    fun update(calculation: CalculationResultDTO): CalculationResultDTO? {
+        return transaction {
+            val updatedRows = CalculationResultTable.update({ CalculationResultTable.id eq calculation.id }) {
+                it[userId] = calculation.userId
+                it[tdee] = calculation.tdee
+                it[protein] = calculation.protein
+                it[fat] = calculation.fat
+                it[carbs] = calculation.carbs
+                it[recommendedCalories] = calculation.recommendedCalories
+            }
+
+            if (updatedRows > 0) calculation else null
         }
+    }
+
+    fun delete(id: String): Boolean {
+        return transaction {
+            val deletedCount = CalculationResultTable.deleteWhere {
+                CalculationResultTable.id.eq(id)
+            }
+            deletedCount > 0
+        }
+    }
+
+    fun findByUserId(userId: String): List<CalculationResultDTO> {
+        return transaction {
+            CalculationResultTable
+                .selectAll()
+                .where { CalculationResultTable.userId eq userId }
+                .map { rowToCalculation(it) }
+        }
+    }
+
+    private fun rowToCalculation(row: ResultRow): CalculationResultDTO {
+        return CalculationResultDTO(
+            id = row[CalculationResultTable.id],
+            userId = row[CalculationResultTable.userId],
+            tdee = row[CalculationResultTable.tdee],
+            protein = row[CalculationResultTable.protein],
+            fat = row[CalculationResultTable.fat],
+            carbs = row[CalculationResultTable.carbs],
+            recommendedCalories = row[CalculationResultTable.recommendedCalories]
+        )
     }
 }
