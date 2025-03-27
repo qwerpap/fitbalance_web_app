@@ -13,70 +13,65 @@ import java.util.*
 class UserInfoController(private val call: ApplicationCall) {
 
     suspend fun createUserInfo() {
-        val principal = call.principal<JWTPrincipal>()
-        val userId = principal?.payload?.getClaim("userId")?.asString()
-
-        if (userId != null) {
+        try {
             val userInfoDto = call.receive<UserInfoDTO>()
-            val userInfo = UserInfoRepository.create(userInfoDto.copy(id = userId))
-            call.respond(HttpStatusCode.Created, userInfo)
-        } else {
-            call.respond(HttpStatusCode.Forbidden, "Access denied")
+
+            // Проверяем, передан ли ID пользователя
+            if (userInfoDto.id.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "Missing user ID")
+                return
+            }
+
+            val createdUserInfo = UserInfoRepository.create(userInfoDto)
+            call.respond(HttpStatusCode.Created, createdUserInfo)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
         }
     }
 
     suspend fun getUserInfo() {
-        val userId = call.request.queryParameters["userId"].takeIf { !it.isNullOrBlank() }
-            ?: return call.respond(HttpStatusCode.BadRequest, mapOf(
+        val userId = call.request.queryParameters["userId"]
+
+        if (userId.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, mapOf(
                 "error" to "Missing userId parameter",
-                "example" to "/user-info?userId=a8a2880a-8e3c-4234-a986-49afc40df3a5"
+                "example" to "/user-info?userId=some-unique-id"
             ))
+            return
+        }
 
         try {
             val userInfo = UserInfoRepository.read(userId)
-                ?: return call.respond(HttpStatusCode.NotFound, mapOf(
-                    "error" to "User not found",
-                    "userId" to userId
-                ))
-
-            call.respond(userInfo)
-        } catch (e: Exception) {
-            call.respond(HttpStatusCode.InternalServerError, mapOf(
-                "error" to "Database error",
-                "details" to e.message
-            ))
-        }
-    }
-
-    suspend fun updateUserInfo() {
-        val principal = call.principal<JWTPrincipal>()
-        val userId = principal?.payload?.getClaim("userId")?.asString()
-
-        if (userId != null) {
-            val userInfoDto = call.receive<UserInfoDTO>()
-            val updatedUserInfo = UserInfoRepository.update(userInfoDto.copy(id = userId))
-            if (updatedUserInfo != null) {
-                call.respond(updatedUserInfo)
+            if (userInfo != null) {
+                call.respond(userInfo)
             } else {
-                call.respond(HttpStatusCode.NotFound, "User info not found")
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
             }
-        } else {
-            call.respond(HttpStatusCode.Forbidden, "Access denied")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Database error", "details" to e.message))
         }
     }
 
     suspend fun deleteUserInfo() {
-        val principal = call.principal<JWTPrincipal>()
-        val userId = principal?.payload?.getClaim("userId")?.asString()
+        val userId = call.request.queryParameters["userId"]
 
-        if (userId != null) {
-            if (UserInfoRepository.delete(userId)) {
+        if (userId.isNullOrBlank()) {
+            call.respond(HttpStatusCode.BadRequest, "Missing userId parameter")
+            return
+        }
+
+        try {
+            val deleted = UserInfoRepository.delete(userId)
+            if (deleted) {
                 call.respond(HttpStatusCode.OK, "User info deleted")
             } else {
                 call.respond(HttpStatusCode.NotFound, "User info not found")
             }
-        } else {
-            call.respond(HttpStatusCode.Forbidden, "Access denied")
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.InternalServerError, "Error occurred: ${e.message}")
+            e.printStackTrace()  // Вывод ошибки в лог
         }
     }
+
+
 }

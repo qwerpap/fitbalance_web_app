@@ -1,5 +1,6 @@
 package com.example.features.calculator
 
+import com.example.features.calculator.data.repositories.UserInfoRepository
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.authenticate
@@ -22,16 +23,26 @@ fun Application.configureCalculatorRouting() {
                     UserInfoController(call).getUserInfo()
                 }
 
-                // Update
-                put {
-                    UserInfoController(call).updateUserInfo()
-                }
-
                 // Delete
-                delete {
-                    UserInfoController(call).deleteUserInfo()
+                delete("/user-info") {
+                    val userId = call.request.queryParameters["userId"]
+
+                    if (userId.isNullOrBlank()) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing userId parameter")
+                        return@delete
+                    }
+
+                    val deleted = UserInfoRepository.delete(userId)
+                    if (deleted) {
+                        call.respond(HttpStatusCode.OK, "User info deleted")
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, "User info not found")
+                    }
                 }
             }
+
+
+
 
             // CalculationResult CRUD endpoints
             route("/calculations") {

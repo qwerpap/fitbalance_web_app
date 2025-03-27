@@ -43,12 +43,21 @@ import java.sql.Connection
 
 fun Application.module() {
 
+    //первая бизнесс сущность - user_info
     routing {
-        // ... другие маршруты ...
-
-        //READ
+        // Чтение данных пользователя (READ)
         get("/user-info") {
             UserInfoController(call).getUserInfo()
+        }
+
+        // Создание нового пользователя (CREATE)
+        post("/user-info") {
+            UserInfoController(call).createUserInfo()
+        }
+
+        // Удаление данных пользователя (DELETE)
+        delete("/user-info") {
+            UserInfoController(call).deleteUserInfo()
         }
     }
 
