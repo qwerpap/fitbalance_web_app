@@ -24,6 +24,7 @@ import com.example.features.calculator.CalculatorService
 import com.example.features.calculator.UserInfo
 import com.example.features.calculator.UserInfoDTO
 import com.example.features.calculator.data.repositories.UserInfoRepository
+import io.ktor.server.html.insert
 
 
 fun Application.configureRouting() {
@@ -274,34 +275,75 @@ fun Application.configureRouting() {
 
         post("/calculate") {
             try {
+                // Получаем данные от клиента
                 val userInfo = try {
                     call.receive<UserInfo>()
                 } catch (e: Exception) {
+                    println("Error receiving user info: ${e.message}")
                     call.respond(HttpStatusCode.BadRequest, "Invalid request body")
                     return@post
                 }
 
+                // Генерируем уникальный ID для пользователя
+                val userId = UUID.randomUUID().toString()
+
+                // Создаем UserInfoDTO
+                val userInfoDTO = UserInfoDTO(
+                    id = userId,
+                    age = userInfo.age,
+                    gender = userInfo.gender,
+                    height = userInfo.height,
+                    weight = userInfo.weight,
+                    goal = userInfo.goal,
+                    activityLevel = userInfo.activityLevel
+                )
+
+                // Сохраняем UserInfoDTO в базу данных
+                try {
+                    UserInfoRepository.create(userInfoDTO) // Используем create вместо insert
+                } catch (e: Exception) {
+                    println("Error inserting user info: ${e.message}")
+                    call.respond(HttpStatusCode.InternalServerError, "Failed to save user info")
+                    return@post
+                }
+
+                // Выполняем расчеты
                 val calculatorService = CalculatorService()
-
-                // Рассчитываем TDEE
                 val tdee = calculatorService.calculateTDEE(userInfo)
-
-                // Рассчитываем макронутриенты
                 val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
 
-                // Возвращаем результат
+                // Создаем CalculationResultDTO
+                val calculationResultDTO = CalculationResultDTO(
+                    id = UUID.randomUUID().toString(),  // Уникальный ID для результата
+                    userId = userId,  // Связываем результат с пользователем
+                    tdee = tdee,
+                    protein = result.protein,
+                    fat = result.fat,
+                    carbs = result.carbs,
+                    recommendedCalories = result.recommendedCalories
+                )
+
+                // Сохраняем CalculationResultDTO в базу данных
+                try {
+                    CalculationResultRepository.create(calculationResultDTO) // Используем create вместо insert
+                } catch (e: Exception) {
+                    println("Error inserting calculation result: ${e.message}")
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        "Failed to save calculation result"
+                    )
+                    return@post
+                }
+
+                // Возвращаем результат клиенту
                 call.respond(result)
 
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid input data")
+
             } catch (e: Exception) {
-                call.respond(
-                    HttpStatusCode.InternalServerError,
-                    "Unexpected error occurred"
-                )
+                println("Unexpected error: ${e.message}")
+                call.respond(HttpStatusCode.InternalServerError, "Unexpected error occurred")
             }
         }
-
 
     }
 }

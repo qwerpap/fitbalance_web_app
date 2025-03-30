@@ -16,36 +16,22 @@ class CalculatorController(private val call: ApplicationCall) {
     private val calculatorService = CalculatorService()
 
     suspend fun calculateAndSave() {
-        val principal = call.principal<JWTPrincipal>()
-        val userId = principal?.payload?.getClaim("userId")?.asString() // Предположим, что userId хранится в токене
-        val role = principal?.payload?.getClaim("role")?.asString()
-
-        if (role == "user" && userId != null) {
-            // Получаем данные пользователя из запроса
+        try {
+            // Получаем данные из запроса
             val userInfo = call.receive<UserInfo>()
 
-            // Выполняем расчет TDEE и макронутриентов
+            // Выполняем расчёты
             val tdee = calculatorService.calculateTDEE(userInfo)
             val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
 
-            // Создаем объект NutritionCalculation
-            val calculation = NutritionCalculation(
-                userId = userId,
-                tdee = tdee,
-                protein = result.protein,
-                fat = result.fat,
-                carbs = result.carbs,
-                recommendedCalories = result.recommendedCalories
-            )
-
-            // Сохраняем расчет в репозитории
-            val savedCalculation = NutritionCalculationRepository.create(calculation)
-
-            // Возвращаем сохраненный расчет в ответе
-            call.respond(savedCalculation)
-        } else {
-            call.respond(HttpStatusCode.Forbidden, "Access denied")
+            // Возвращаем результат (без сохранения в БД)
+            call.respond(result)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.BadRequest, "Ошибка: ${e.message}")
         }
+    }
+}
+
 
 
 //        //CREATE
@@ -99,5 +85,3 @@ class CalculatorController(private val call: ApplicationCall) {
 //            println("Calculation not found")
 //        }
 
-    }
-}
