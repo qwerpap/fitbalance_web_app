@@ -1,6 +1,7 @@
 package com.example.features.calculator
 
 import com.example.features.calculator.data.models.NutritionCalculation
+import com.example.features.calculator.data.repositories.CalculationResultRepository
 import com.example.features.calculator.data.repositories.NutritionCalculationRepository
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
@@ -12,76 +13,48 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 class CalculatorController(private val call: ApplicationCall) {
-
     private val calculatorService = CalculatorService()
 
     suspend fun calculateAndSave() {
         try {
-            // Получаем данные из запроса
+            // Получаем данные пользователя из тела запроса
             val userInfo = call.receive<UserInfo>()
+
+            // Генерируем случайный ID для сохранения расчета
+            val calculationId = UUID.randomUUID().toString()
 
             // Выполняем расчёты
             val tdee = calculatorService.calculateTDEE(userInfo)
             val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
 
-            // Возвращаем результат (без сохранения в БД)
+            // Сохраняем результат в БД
+            val calculationDto = CalculationResultDTO(
+                id = calculationId,
+                userId = "anonymous", // или null, если поле nullable
+                tdee = result.tdee,
+                protein = result.protein,
+                fat = result.fat,
+                carbs = result.carbs,
+                recommendedCalories = result.recommendedCalories
+            )
+
+            val savedCalculation = CalculationResultRepository.create(calculationDto)
+
+            // Возвращаем результат
+            call.respond(savedCalculation)
+        } catch (e: Exception) {
+            call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
+        }
+    }
+
+    suspend fun calculateOnly() {
+        try {
+            val userInfo = call.receive<UserInfo>()
+            val tdee = calculatorService.calculateTDEE(userInfo)
+            val result = calculatorService.calculateMacronutrients(tdee, userInfo.goal)
             call.respond(result)
         } catch (e: Exception) {
-            call.respond(HttpStatusCode.BadRequest, "Ошибка: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, "Error: ${e.message}")
         }
     }
 }
-
-
-
-//        //CREATE
-//        val calculation = NutritionCalculation(
-//            id = UUID.randomUUID().toString(), // Генерируем уникальный ID
-//            userId = "user123",
-//            tdee = 2500.0,
-//            protein = 150.0,
-//            fat = 80.0,
-//            carbs = 300.0,
-//            recommendedCalories = 2000.0,
-//            date = LocalDateTime.now().toString() // Текущая дата и время
-//        )
-//        val createdCalculation = NutritionCalculationRepository.create(calculation)
-//        println("Created calculation: $createdCalculation")
-
-
-
-//        //READ
-//        val calculationId = "12345"
-//        val calculation = NutritionCalculationRepository.read(calculationId)
-//        if (calculation != null) {
-//            println("Calculation found: $calculation")
-//        } else {
-//            println("Calculation not found")
-//        }
-
-
-//        //UPDATE
-//        val calculationId = "12345"
-//        val existingCalculation = NutritionCalculationRepository.read(calculationId)
-//        if (existingCalculation != null) {
-//            val updatedCalculation = existingCalculation.copy(tdee = 2600.0) // Обновляем значение tdee
-//            val result = NutritionCalculationRepository.update(updatedCalculation)
-//            if (result != null) {
-//                println("Calculation updated: $result")
-//            } else {
-//                println("Calculation not found")
-//            }
-//        } else {
-//            println("Calculation not found")
-//        }
-
-
-//        //DELETE
-//        val calculationId = "12345"
-//        val isDeleted = NutritionCalculationRepository.delete(calculationId)
-//        if (isDeleted) {
-//            println("Calculation deleted")
-//        } else {
-//            println("Calculation not found")
-//        }
-

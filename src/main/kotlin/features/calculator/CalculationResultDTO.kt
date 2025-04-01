@@ -1,11 +1,14 @@
 package com.example.features.calculator
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class CalculationResultDTO(
     val id: String,
-    val userId: String,  // Ссылка на пользователя
-    val tdee: Double,  // Total Daily Energy Expenditure
-    val protein: Double,  // Белки в граммах
-    val fat: Double,  // Жиры в граммах
-    val carbs: Double,  // Углеводы в граммах
-    val recommendedCalories: Double  // Рекомендуемые калории
+    val userId: String? = null,  // Делаем nullable для анонимных расчетов
+    val tdee: Double,
+    val protein: Double,
+    val fat: Double,
+    val carbs: Double,
+    val recommendedCalories: Double
 )

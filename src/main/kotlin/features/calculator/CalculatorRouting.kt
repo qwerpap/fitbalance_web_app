@@ -10,69 +10,65 @@ import io.ktor.server.routing.*
 
 fun Application.configureCalculatorRouting() {
     routing {
-        authenticate("auth-jwt") {
-            // UserInfo CRUD endpoints
-            route("/user-info") {
-                // Create
-                post {
-                    UserInfoController(call).createUserInfo()
-                }
-
-                // Read
-                get {
-                    UserInfoController(call).getUserInfo()
-                }
-
-                // Delete
-                delete("/user-info") {
-                    val userId = call.request.queryParameters["userId"]
-
-                    if (userId.isNullOrBlank()) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing userId parameter")
-                        return@delete
-                    }
-
-                    val deleted = UserInfoRepository.delete(userId)
-                    if (deleted) {
-                        call.respond(HttpStatusCode.OK, "User info deleted")
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "User info not found")
-                    }
-                }
+        // Первая бизнес-сущность: user_info
+        route("/user-info") {
+            // Чтение данных пользователя (READ)
+            get {
+                UserInfoController(call).getUserInfo()
             }
 
+            // Создание нового пользователя (CREATE)
+            post {
+                UserInfoController(call).createUserInfo()
+            }
 
+            // Удаление данных пользователя (DELETE)
+            delete {
+                UserInfoController(call).deleteUserInfo()
+            }
+        }
 
+        // Вторая бизнес-сущность: calculation_result
+        route("/calculations") {
+            // Создание расчета (CREATE)
+            post {
+                CalculationResultController(call).createCalculation()
+            }
 
-            // CalculationResult CRUD endpoints
-            route("/calculations") {
-                // Create
-                post {
-                    CalculationResultController(call).createCalculation()
-                }
+            // Получение расчета по ID (READ)
+            get("/{id}") {
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing calculation ID")
+                CalculationResultController(call).getCalculation(id)
+            }
 
-                // Read by ID
-                get("/{id}") {
-                    val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-                    CalculationResultController(call).getCalculation(id)
-                }
+            // Обновление расчета (UPDATE)
+            put {
+                CalculationResultController(call).updateCalculation()
+            }
 
-                // Update
-                put {
-                    CalculationResultController(call).updateCalculation()
-                }
+            // Удаление расчета (DELETE)
+            delete("/{id}") {
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing calculation ID")
+                CalculationResultController(call).deleteCalculation(id)
+            }
 
-                // Delete
-                delete("/{id}") {
-                    val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing id")
-                    CalculationResultController(call).deleteCalculation(id)
-                }
+            // Получение всех расчетов пользователя (LIST)
+            get("/user/{userId}") {
+                val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Missing user ID")
+                CalculationResultController(call).getUserCalculations(userId)
+            }
+        }
 
-                // Get all by user ID
-                get("/user/{userId}") {
-                    val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Missing userId")
-                    CalculationResultController(call).getUserCalculations(userId)
-                }
+        // Публичный расчет (без аутентификации)
+        route("/calculator") {
+            // Быстрый расчет без сохранения
+            post("/quick") {
+                CalculatorController(call).calculateOnly()
+            }
+
+            // Расчет с сохранением результата
+            post {
+                CalculatorController(call).calculateAndSave()
             }
         }
     }
