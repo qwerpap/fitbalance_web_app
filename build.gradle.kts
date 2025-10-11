@@ -22,46 +22,33 @@ repositories {
 }
 
 dependencies {
+    // Ktor Core
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation("io.ktor:ktor-server-cio:$ktor_version")
+    implementation(libs.ktor.server.config.yaml)
+    
+    // Content Negotiation & Serialization
+    implementation(libs.ktor.server.content.negotiation)
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-
+    
+    // Database
     implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-dao:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
-
-    implementation("io.ktor:ktor-server-cio:$ktor_version")
-
-    implementation("org.postgresql:postgresql:42.2.20")
-
-
-    implementation("io.ktor:ktor-server-auth-jvm:$ktor_version") // Основной модуль аутентификации
-    implementation("io.ktor:ktor-server-auth-jwt-jvm:$ktor_version") // JWT аутентификация
-
-    implementation("com.auth0:java-jwt:4.4.0")  // Библиотека для работы с JWT (Auth0)
-
-    implementation("ch.qos.logback:logback-classic:1.4.7")
-
-    implementation("io.ktor:ktor-server-auth:$ktor_version")
+    implementation("org.postgresql:postgresql:42.7.3")
+    
+    // HTML Builder
     implementation("io.ktor:ktor-server-html-builder:$ktor_version")
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.12.0")
-    implementation("io.ktor:ktor-server-resources:$ktor_version")
-
-    implementation("com.auth0:java-jwt:4.4.0")
-
+    
+    // Logging
     implementation("io.ktor:ktor-server-call-logging:$ktor_version")
-
-    implementation("org.slf4j:slf4j-api:1.7.32") // Зависимость для SLF4J
-    implementation("ch.qos.logback:logback-classic:1.2.6") // Зависимость для Logback (если используете его)
-
-    implementation("org.slf4j:slf4j-api:1.7.32")
-    implementation("org.slf4j:slf4j-simple:1.7.32")
-
-
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
-    implementation(libs.ktor.server.config.yaml)
+    implementation("org.slf4j:slf4j-api:2.0.9")
+    
+    // Testing
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 }

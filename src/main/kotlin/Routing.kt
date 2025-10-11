@@ -1,30 +1,22 @@
 package com.example
 
-import com.auth0.jwt.JWT
-import com.example.database.tokens.TokenDTO
-import com.example.database.tokens.Tokens
 import com.example.database.users.Users
 import com.example.features.login.LoginReceiveRemote
-import com.example.features.login.LoginResponceRemote
+import com.example.features.login.LoginResponseRemote
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
-import io.ktor.server.auth.authenticate
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.principal
 import io.ktor.server.html.respondHtml
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
 import io.ktor.server.request.receive
-import java.util.UUID
-import com.auth0.jwt.algorithms.Algorithm
-import com.example.features.calculator.CalculationResultDTO
-import com.example.features.calculator.data.repositories.CalculationResultRepository
 import com.example.features.calculator.CalculatorService
 import com.example.features.calculator.UserInfo
 import com.example.features.calculator.UserInfoDTO
 import com.example.features.calculator.data.repositories.UserInfoRepository
-import io.ktor.server.html.insert
+import com.example.features.calculator.CalculationResultDTO
+import com.example.features.calculator.data.repositories.CalculationResultRepository
+import java.util.UUID
 
 
 fun Application.configureRouting() {
@@ -163,25 +155,14 @@ fun Application.configureRouting() {
                 return@post
             }
 
-            val token = JWT.create()
-                .withAudience("fitbalance")
-                .withIssuer("fitbalance_server")
-                .withClaim("login", userDTO.login)
-                .withClaim("userId", userDTO.id)  // Добавляем userId
-                .withClaim("role", userDTO.role ?: "user")
-                .sign(Algorithm.HMAC256("my-very-secure-secret-key-12345"))
-
-            // Устанавливаем HTTP-only cookie
-            call.response.cookies.append(
-                name = "JWT",
-                value = token,
-                secure = false,  // true в production
-                httpOnly = true,
-                path = "/",
-                maxAge = 86400
+            call.respond(
+                LoginResponseRemote(
+                    id = userDTO.id,
+                    login = userDTO.login,
+                    email = userDTO.email ?: "",
+                    role = userDTO.role ?: "user"
+                )
             )
-
-            call.respond(LoginResponceRemote(token = token, role = userDTO.role ?: "user"))
         }
 
 

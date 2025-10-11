@@ -9,5 +9,6 @@ data class UserInfo(
     val height: Double, // in cm
     val weight: Double, // in kg
     val goal: String, // "lose", "maintain", "gain"
-    val activityLevel: String // "low", "medium", "high"
+    val activityLevel: String, // "low", "medium", "high"
+    val userId: String? = null // Optional user ID for saving calculations
 )
