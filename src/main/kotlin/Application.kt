@@ -4,6 +4,9 @@ import com.example.auth.JwtConfig
 import com.example.auth.configureGoogleAuth
 import com.example.auth.configureRoleManagement
 import com.example.cache.CacheService
+import com.example.queue.QueueService
+import com.example.queue.QueueConsumer
+import com.example.queue.configureQueueRouting
 import com.example.features.admin.configureAdminRouting
 import com.example.features.calculator.configureCalculatorRouting
 import com.example.features.login.configureLoginRouting
@@ -53,14 +56,35 @@ fun Application.module() {
         log.warn("Failed to connect to Redis at $redisUrl. Cache will be disabled.")
     }
     
-    // Сохраняем cacheService в attributes для доступа из роутов
-    environment.monitor.subscribe(ApplicationStopped) {
-        cacheService.close()
-        log.info("Redis connection closed")
+    // RabbitMQ Queue Connection
+    val rabbitHost = System.getenv("RABBITMQ_HOST") ?: "localhost"
+    val rabbitPort = System.getenv("RABBITMQ_PORT")?.toIntOrNull() ?: 5672
+    val rabbitUser = System.getenv("RABBITMQ_USER") ?: "fitbalance"
+    val rabbitPass = System.getenv("RABBITMQ_PASSWORD") ?: "fitbalance"
+    val queueService = QueueService(rabbitHost, rabbitPort, rabbitUser, rabbitPass)
+    
+    // Проверка подключения к RabbitMQ
+    if (queueService.connect()) {
+        log.info("Successfully connected to RabbitMQ at $rabbitHost:$rabbitPort")
+        
+        // Запускаем consumers для обработки сообщений из очередей
+        val queueConsumer = QueueConsumer(queueService)
+        queueConsumer.startConsumers()
+        log.info("Queue consumers started successfully")
+    } else {
+        log.warn("Failed to connect to RabbitMQ at $rabbitHost:$rabbitPort. Queue will be disabled.")
     }
     
-    // Делаем cacheService доступным через attributes
+    // Сохраняем сервисы в attributes для доступа из роутов
+    environment.monitor.subscribe(ApplicationStopped) {
+        cacheService.close()
+        queueService.close()
+        log.info("Redis and RabbitMQ connections closed")
+    }
+    
+    // Делаем сервисы доступными через attributes
     attributes.put(CacheServiceKey, cacheService)
+    attributes.put(QueueServiceKey, queueService)
     
     // Call Logging
     install(CallLogging) {
@@ -109,14 +133,19 @@ fun Application.module() {
     configureGoogleAuth(httpClient)
     configureRoleManagement()
     configureAdminRouting()
+    configureQueueRouting()
 }
 
-// AttributeKey для CacheService
+// AttributeKey для сервисов
 val CacheServiceKey = AttributeKey<CacheService>("CacheService")
+val QueueServiceKey = AttributeKey<QueueService>("QueueService")
 
-// Extension для удобного доступа к CacheService
+// Extensions для удобного доступа к сервисам
 val ApplicationCall.cacheService: CacheService
     get() = application.attributes[CacheServiceKey]
+
+val ApplicationCall.queueService: QueueService
+    get() = application.attributes[QueueServiceKey]
 
 fun main() {
     embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)

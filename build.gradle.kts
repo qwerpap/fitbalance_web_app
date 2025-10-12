@@ -60,6 +60,10 @@ dependencies {
     implementation("io.lettuce:lettuce-core:6.3.0.RELEASE")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     
+    // RabbitMQ Message Queue
+    implementation("com.rabbitmq:amqp-client:5.20.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    
     // Testing
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)

@@ -13,3 +13,10 @@ ktor:
 redis:
     url: "redis://localhost:6379"
     enabled: true
+
+rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "fitbalance"
+    password: "fitbalance"
+    enabled: true
