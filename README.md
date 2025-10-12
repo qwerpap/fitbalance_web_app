@@ -1,40 +1,134 @@
-# fitbalance
+# FitBalance Web App
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+Веб-приложение для фитнес-калькуляций с авторизацией через Google OAuth 2.0.
 
-Here are some useful links to get you started:
+## 🚀 Возможности
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+- ✅ **Google OAuth 2.0** - авторизация через Google аккаунт
+- ✅ **JWT Authentication** - безопасная аутентификация
+- ✅ **Система ролей** - USER и ADMIN роли
+- ✅ **Admin панель** - управление пользователями
+- ✅ **Фитнес калькулятор** - расчет калорий и макронутриентов
+- ✅ **PostgreSQL база данных**
 
-## Features
+## ⚙️ Начальная настройка
 
-Here's a list of features included in this project:
+### 1. Настройка переменных окружения
 
-| Name                                                               | Description                                                                        |
-| --------------------------------------------------------------------|------------------------------------------------------------------------------------ |
-| [Routing](https://start.ktor.io/p/routing)                         | Provides a structured routing DSL                                                  |
-| [Content Negotiation](https://start.ktor.io/p/content-negotiation) | Provides automatic content conversion according to Content-Type and Accept headers |
+Скопируйте файл с примером и заполните своими данными:
 
-## Building & Running
+```bash
+cp .env.example .env
+```
 
-To build or run the project, use one of the following tasks:
+Отредактируйте `.env` и добавьте свои значения:
 
-| Task                          | Description                                                          |
-| -------------------------------|---------------------------------------------------------------------- |
-| `./gradlew test`              | Run the tests                                                        |
-| `./gradlew build`             | Build everything                                                     |
-| `buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `run`                         | Run the server                                                       |
-| `runDocker`                   | Run using the local docker image                                     |
+```bash
+# Google OAuth (получите на https://console.cloud.google.com)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=http://localhost:8080/auth/google/callback
 
-If the server starts successfully, you'll see the following output:
+# JWT Secret (сгенерируйте случайную строку)
+JWT_SECRET=your-secure-random-string-here
+
+# Database
+DB_USER=your-db-username
+DB_PASSWORD=your-db-password
+```
+
+### 2. Настройка Google OAuth
+
+1. Перейдите в [Google Cloud Console](https://console.cloud.google.com)
+2. Создайте новый проект или выберите существующий
+3. Включите **Google+ API**
+4. Создайте **OAuth 2.0 Client ID** в разделе "Credentials"
+5. Добавьте authorized redirect URI: `http://localhost:8080/auth/google/callback`
+6. Скопируйте Client ID и Client Secret в `.env` файл
+
+### 3. Настройка PostgreSQL
+
+```bash
+# Создайте базу данных
+createdb fitbalance
+
+# Выполните миграции
+psql -d fitbalance -f migrations/001_add_google_auth.sql
+```
+
+## 🏃 Запуск приложения
+
+### Быстрый старт
+
+```bash
+./start.sh
+```
+
+Скрипт `start.sh` автоматически:
+- Загружает переменные окружения из `.env`
+- Настраивает Java PATH
+- Запускает сервер через Gradle
+
+### Альтернативные команды
+
+| Команда                       | Описание                                                            |
+| ------------------------------|---------------------------------------------------------------------|
+| `./gradlew run`               | Запустить сервер (без загрузки .env)                               |
+| `./gradlew test`              | Запустить тесты                                                     |
+| `./gradlew build`             | Собрать проект                                                      |
+| `./gradlew buildFatJar`       | Собрать JAR с зависимостями                                         |
+
+## 📍 Endpoints
+
+### Публичные
+- `GET /` - главная страница
+- `POST /login` - логин
+- `POST /register` - регистрация
+- `GET /auth/google/login` - начало OAuth процесса
+- `GET /auth/google/callback` - OAuth callback
+
+### Защищенные (требуют JWT токен)
+- `GET /calculator` - фитнес калькулятор
+- `GET /user/info` - информация о пользователе
+
+### Admin только
+- `GET /admin/users` - список всех пользователей
+- `PUT /admin/users/{id}/role` - изменить роль пользователя
+
+## 🔒 Безопасность
+
+⚠️ **ВАЖНО:** Файл `.env` содержит секретные данные и **не должен** коммититься в git!
+
+- `.env` - добавлен в `.gitignore`
+- `.env.example` - шаблон для создания собственного `.env`
+
+## 📱 Тестирование
+
+Для тестирования Google OAuth откройте:
+```
+http://localhost:8080/google-auth-test.html
+```
+
+## 🛠 Технологии
+
+- **Ktor** - веб-фреймворк
+- **Kotlin** - язык программирования
+- **PostgreSQL** - база данных
+- **Exposed** - ORM
+- **JWT** - аутентификация
+- **Google OAuth 2.0** - авторизация
+
+---
+
+Если сервер запустился успешно, вы увидите:
 
 ```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
+🚀 Запускаем FitBalance сервер...
+📊 Google Client ID: your-client-id
+🔐 JWT Secret: your-jwt-secret...
+💾 Database: fitbalance (user: your-user)
+
+Application started in 0.303 seconds.
+Responding at http://0.0.0.0:8080
 ```
 
