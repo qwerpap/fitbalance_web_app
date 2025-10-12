@@ -1,6 +1,7 @@
 package com.example.features.admin
 
-import com.example.database.users.Users
+import com.example.cacheService
+import com.example.database.users.UsersCached
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -37,7 +38,7 @@ fun Application.configureAdminRouting() {
                 }
                 
                 try {
-                    val users = Users.fetchAll()
+                    val users = UsersCached.fetchAll()
                     val userList = users.map { user ->
                         UserListItem(
                             id = user.id,
@@ -71,6 +72,13 @@ fun Application.configureAdminRouting() {
                     return@put
                 }
                 
+                // Получаем cacheService
+                val cacheService = try {
+                    call.cacheService
+                } catch (e: Exception) {
+                    null
+                }
+                
                 try {
                     val updateRequest = call.receive<UpdateRoleRequest>()
                     val newRole = updateRequest.role
@@ -81,15 +89,15 @@ fun Application.configureAdminRouting() {
                         return@put
                     }
                     
-                    // Проверяем, что пользователь существует
-                    val existingUser = Users.fetchUserById(userId)
+                    // Проверяем, что пользователь существует (с кэшированием)
+                    val existingUser = UsersCached.fetchUserById(userId, cacheService)
                     if (existingUser == null) {
                         call.respond(HttpStatusCode.NotFound, mapOf("error" to "User not found"))
                         return@put
                     }
                     
-                    // Обновляем роль
-                    val success = Users.updateUserRole(userId, newRole)
+                    // Обновляем роль (с кэшированием)
+                    val success = UsersCached.updateUserRole(userId, newRole, cacheService)
                     
                     if (success) {
                         call.respond(mapOf("message" to "User role updated successfully", "newRole" to newRole))

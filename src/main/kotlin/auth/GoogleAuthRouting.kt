@@ -1,7 +1,9 @@
 package com.example.auth
 
+import com.example.cacheService
+import com.example.cache.CacheService
 import com.example.database.users.UserDTO
-import com.example.database.users.Users
+import com.example.database.users.UsersCached
 import io.ktor.client.*
 import io.ktor.client.call.body
 import io.ktor.client.request.*
@@ -32,9 +34,6 @@ data class UserInfo(
     val email: String,
     val role: String
 )
-
-// Хранилище использованных кодов (в реальном приложении лучше использовать Redis или БД)
-private val usedCodes = mutableSetOf<String>()
 
 fun Application.configureGoogleAuth(httpClient: HttpClient) {
     routing {
@@ -77,12 +76,21 @@ fun Application.configureGoogleAuth(httpClient: HttpClient) {
                 return@get
             }
             
+            // Получаем cacheService
+            val cacheService = try {
+                call.cacheService
+            } catch (e: Exception) {
+                null
+            }
+            
             // Проверяем, не используется ли этот код повторно
             val requestId = "${System.currentTimeMillis()}-${code.hashCode()}"
             println("DEBUG: Processing callback with request ID: $requestId")
             
-            // Проверяем, не был ли код уже использован
-            if (usedCodes.contains(code)) {
+            val oauthCodeKey = "${CacheService.OAUTH_CODE_PREFIX}$code"
+            
+            // Проверяем, не был ли код уже использован (используем Redis)
+            if (cacheService?.exists(oauthCodeKey) == true) {
                 println("WARNING: Code already used, returning error")
                 call.respondText("Authorization code already used", status = HttpStatusCode.BadRequest)
                 return@get
@@ -139,8 +147,8 @@ fun Application.configureGoogleAuth(httpClient: HttpClient) {
 
                 val googleUser = userInfoResponse.body<GoogleUserInfo>()
 
-                // Проверяем, есть ли пользователь в БД
-                var user = Users.fetchUserByGoogleId(googleUser.id)
+                // Проверяем, есть ли пользователь в БД (с кэшированием)
+                var user = UsersCached.fetchUserByGoogleId(googleUser.id, cacheService)
 
                 if (user == null) {
                     // Создаем нового пользователя
@@ -153,14 +161,14 @@ fun Application.configureGoogleAuth(httpClient: HttpClient) {
                         password = null,
                         role = "user" // По умолчанию роль user
                     )
-                    Users.insert(user)
+                    UsersCached.insert(user, cacheService)
                 }
 
                 // Генерируем JWT токен
                 val jwtToken = JwtConfig.generateToken(user.id, user.email, user.role)
 
-                // ПОСЛЕ успешного получения токена помечаем код как использованный
-                usedCodes.add(code)
+                // ПОСЛЕ успешного получения токена помечаем код как использованный (в Redis)
+                cacheService?.set(oauthCodeKey, "used", CacheService.OAUTH_CODE_TTL)
                 println("DEBUG: Code marked as used after successful auth")
 
                 // Возвращаем HTML-страницу, которая сохранит токен и редиректнет

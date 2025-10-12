@@ -9,3 +9,7 @@ ktor:
         secretKey: "my-very-secure-secret-key-12345"
         audience: "my-ktor-app"
         issuer: "my-ktor-server"
+
+redis:
+    url: "redis://localhost:6379"
+    enabled: true

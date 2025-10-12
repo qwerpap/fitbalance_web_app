@@ -1,6 +1,7 @@
 package com.example.features.calculator
 
-import com.example.features.calculator.data.repositories.CalculationResultRepository
+import com.example.cacheService
+import com.example.features.calculator.data.repositories.CalculationResultRepositoryCached
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -9,6 +10,12 @@ import java.util.UUID
 
 class CalculatorController(private val call: ApplicationCall) {
     private val calculatorService = CalculatorService()
+    
+    private val cacheService = try {
+        call.cacheService
+    } catch (e: Exception) {
+        null
+    }
 
     suspend fun calculateAndSave() {
         try {
@@ -28,7 +35,8 @@ class CalculatorController(private val call: ApplicationCall) {
                 recommendedCalories = result.recommendedCalories
             )
 
-            val savedCalculation = CalculationResultRepository.create(calculationDto)
+            // Используем кэшированную версию
+            val savedCalculation = CalculationResultRepositoryCached.create(calculationDto, cacheService)
             call.respond(HttpStatusCode.Created, savedCalculation)
         } catch (e: Exception) {
             call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))

@@ -3,6 +3,7 @@ package com.example
 import com.example.auth.JwtConfig
 import com.example.auth.configureGoogleAuth
 import com.example.auth.configureRoleManagement
+import com.example.cache.CacheService
 import com.example.features.admin.configureAdminRouting
 import com.example.features.calculator.configureCalculatorRouting
 import com.example.features.login.configureLoginRouting
@@ -16,6 +17,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.cio.CIO
+import io.ktor.util.AttributeKey
 import org.jetbrains.exposed.sql.Database
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.http.content.*
@@ -39,6 +41,26 @@ fun Application.module() {
         user = dbUser,
         password = dbPassword
     )
+    
+    // Redis Cache Connection
+    val redisUrl = System.getenv("REDIS_URL") ?: "redis://localhost:6379"
+    val cacheService = CacheService(redisUrl)
+    
+    // Проверка подключения к Redis
+    if (cacheService.ping()) {
+        log.info("Successfully connected to Redis at $redisUrl")
+    } else {
+        log.warn("Failed to connect to Redis at $redisUrl. Cache will be disabled.")
+    }
+    
+    // Сохраняем cacheService в attributes для доступа из роутов
+    environment.monitor.subscribe(ApplicationStopped) {
+        cacheService.close()
+        log.info("Redis connection closed")
+    }
+    
+    // Делаем cacheService доступным через attributes
+    attributes.put(CacheServiceKey, cacheService)
     
     // Call Logging
     install(CallLogging) {
@@ -88,6 +110,13 @@ fun Application.module() {
     configureRoleManagement()
     configureAdminRouting()
 }
+
+// AttributeKey для CacheService
+val CacheServiceKey = AttributeKey<CacheService>("CacheService")
+
+// Extension для удобного доступа к CacheService
+val ApplicationCall.cacheService: CacheService
+    get() = application.attributes[CacheServiceKey]
 
 fun main() {
     embeddedServer(CIO, port = 8080, host = "0.0.0.0", module = Application::module).start(wait = true)

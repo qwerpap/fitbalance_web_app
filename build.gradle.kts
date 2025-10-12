@@ -56,6 +56,10 @@ dependencies {
     implementation(libs.logback.classic)
     implementation("org.slf4j:slf4j-api:2.0.9")
     
+    // Redis Cache
+    implementation("io.lettuce:lettuce-core:6.3.0.RELEASE")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    
     // Testing
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
