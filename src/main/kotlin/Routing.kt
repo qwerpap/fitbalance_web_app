@@ -15,7 +15,7 @@ import com.example.features.calculator.UserInfo
 import com.example.features.calculator.UserInfoDTO
 import com.example.features.calculator.data.repositories.UserInfoRepository
 import com.example.features.calculator.CalculationResultDTO
-import com.example.features.calculator.data.repositories.CalculationResultRepository
+import com.example.features.calculator.data.repositories.CalculationResultRepositoryCached
 import java.util.UUID
 
 
@@ -315,9 +315,16 @@ fun Application.configureRouting() {
                     recommendedCalories = result.recommendedCalories
                 )
 
-                // Сохраняем CalculationResultDTO в базу данных
+                // Получаем cacheService
+                val cacheService = try {
+                    call.cacheService
+                } catch (e: Exception) {
+                    null
+                }
+                
+                // Сохраняем CalculationResultDTO в базу данных (с кэшированием)
                 try {
-                    CalculationResultRepository.create(calculationResultDTO) // Используем create вместо insert
+                    CalculationResultRepositoryCached.create(calculationResultDTO, cacheService)
                 } catch (e: Exception) {
                     println("Error inserting calculation result: ${e.message}")
                     call.respond(

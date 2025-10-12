@@ -1,6 +1,7 @@
 package com.example.auth
 
-import com.example.database.users.Users
+import com.example.cacheService
+import com.example.database.users.UsersCached
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -38,8 +39,15 @@ fun Application.configureRoleManagement() {
                     return@post
                 }
 
-                // Обновляем роль
-                val success = Users.updateUserRole(request.userId, request.newRole)
+                // Получаем cacheService
+                val cacheService = try {
+                    call.cacheService
+                } catch (e: Exception) {
+                    null
+                }
+
+                // Обновляем роль (с кэшированием)
+                val success = UsersCached.updateUserRole(request.userId, request.newRole, cacheService)
                 
                 if (success) {
                     call.respond(HttpStatusCode.OK, mapOf("message" to "Role updated successfully"))
