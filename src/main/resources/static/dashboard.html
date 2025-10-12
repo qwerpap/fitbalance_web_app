@@ -359,6 +359,7 @@
             border-radius: 10px;
             margin-bottom: 15px;
             border-left: 4px solid #667eea;
+            position: relative;
         }
         
         .history-item-date {
@@ -386,6 +387,35 @@
             color: #999;
             padding: 40px 20px;
             font-style: italic;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            opacity: 0.7;
+        }
+        
+        .delete-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+            background: #c82333;
+        }
+        
+        .delete-btn:active {
+            transform: scale(0.95);
         }
         
         @media (max-width: 1024px) {
@@ -748,7 +778,10 @@
                 });
                 
                 return `
-                    <div class="history-item">
+                    <div class="history-item" id="calc-${calc.id}">
+                        <button class="delete-btn" onclick="deleteCalculation('${calc.id}')" title="Удалить запись">
+                            ✕
+                        </button>
                         <div class="history-item-date">${formattedDate}</div>
                         <div class="history-item-value">${Math.round(calc.recommendedCalories)} ккал/день</div>
                         <div class="history-item-details">
@@ -760,6 +793,51 @@
                     </div>
                 `;
             }).join('');
+        }
+        
+        // Удаление расчета из истории
+        async function deleteCalculation(calculationId) {
+            // Подтверждение удаления
+            if (!confirm('Вы уверены, что хотите удалить эту запись из истории?')) {
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            
+            try {
+                const response = await fetch(`${API_URL}/calculations/${calculationId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    console.log('Расчет удален');
+                    
+                    // Анимация удаления
+                    const element = document.getElementById(`calc-${calculationId}`);
+                    if (element) {
+                        element.style.transition = 'all 0.3s ease-out';
+                        element.style.opacity = '0';
+                        element.style.transform = 'translateX(100%)';
+                        
+                        setTimeout(() => {
+                            // Перезагружаем историю
+                            loadHistory();
+                        }, 300);
+                    } else {
+                        // Перезагружаем историю сразу если элемент не найден
+                        loadHistory();
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка при удалении: ' + (error.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка удаления расчета:', error);
+                alert('Ошибка при удалении записи');
+            }
         }
         
         // Калькулятор калорий
