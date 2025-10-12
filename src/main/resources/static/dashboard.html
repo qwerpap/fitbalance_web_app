@@ -32,13 +32,13 @@
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            position: sticky;
-            top: 20px;
         }
         
         .main-content {
             background: transparent;
-            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
         
         h1 {
@@ -115,15 +115,14 @@
         }
         
         .calculator {
-            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
         }
         
         .calculator-card {
             background: white;
             padding: 25px;
             border-radius: 15px;
-            max-width: 400px;
-            margin: 0 auto;
             border: 2px solid #e0e0e0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
@@ -331,14 +330,71 @@
             margin-top: 20px;
         }
         
+        .history {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .history-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .history-title {
+            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .history-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .history-item-date {
+            color: #667eea;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .history-item-value {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .history-item-details {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .history-empty {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+        
         @media (max-width: 1024px) {
             .container {
                 grid-template-columns: 1fr;
             }
             
-            .sidebar {
-                position: relative;
-                top: 0;
+            .main-content {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -441,7 +497,21 @@
                 </div>
             </div>
             
-            <!-- Панель администратора -->
+            <!-- История расчетов -->
+            <div class="history">
+                <h2>📜 История расчетов</h2>
+                
+                <div class="history-card" id="historyCard">
+                    <div class="history-title">Ваши предыдущие расчеты</div>
+                    <div id="historyList">
+                        <div class="history-empty">История расчетов пуста</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Панель администратора -->
+        <div style="grid-column: 1 / -1;">
             <div class="admin-panel" id="adminPanel">
                 <h2>👑 Панель администратора</h2>
                 <p style="color: #856404; margin-bottom: 20px;">
@@ -470,6 +540,7 @@
             }
             
             await loadUserInfo(token);
+            await loadHistory(); // Загружаем историю расчетов
         });
         
         // Загрузка информации о пользователе
@@ -630,6 +701,67 @@
             }
         }
         
+        // Загрузка истории расчетов
+        async function loadHistory() {
+            if (!currentUser || !currentUser.id) {
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            const historyList = document.getElementById('historyList');
+            
+            try {
+                const response = await fetch(`${API_URL}/calculations/user/${currentUser.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const calculations = await response.json();
+                    displayHistory(calculations);
+                } else {
+                    console.error('Не удалось загрузить историю');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+        
+        // Отображение истории
+        function displayHistory(calculations) {
+            const historyList = document.getElementById('historyList');
+            
+            if (!calculations || calculations.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">История расчетов пуста</div>';
+                return;
+            }
+            
+            historyList.innerHTML = calculations.map(calc => {
+                const date = new Date(calc.createdAt);
+                const formattedDate = date.toLocaleString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-item-date">${formattedDate}</div>
+                        <div class="history-item-value">${Math.round(calc.recommendedCalories)} ккал/день</div>
+                        <div class="history-item-details">
+                            TDEE: ${Math.round(calc.tdee)} ккал<br>
+                            Белки: ${Math.round(calc.protein)} г<br>
+                            Жиры: ${Math.round(calc.fat)} г<br>
+                            Углеводы: ${Math.round(calc.carbs)} г
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
         // Калькулятор калорий
         document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -655,9 +787,67 @@
             document.getElementById('caloriesValue').textContent = calories;
             document.getElementById('result').classList.add('show');
             
+            // Сохраняем расчет в базу данных
+            await saveCalculation(calories, weight, height, age, gender, activity);
+            
             // Скроллим к результату
             document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
+        
+        // Сохранение расчета в базу данных
+        async function saveCalculation(calories, weight, height, age, gender, activity) {
+            if (!currentUser || !currentUser.id) {
+                return;
+            }
+            
+            const token = localStorage.getItem('authToken');
+            
+            // Расчет макронутриентов (примерные значения)
+            const protein = weight * 2.0; // 2г на кг веса
+            const fat = (calories * 0.25) / 9; // 25% от калорий
+            const carbs = (calories - (protein * 4) - (fat * 9)) / 4; // остальное
+            
+            const calculationData = {
+                id: generateUUID(),
+                userId: currentUser.id,
+                tdee: calories,
+                protein: protein,
+                fat: fat,
+                carbs: carbs,
+                recommendedCalories: calories,
+                createdAt: Date.now()
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/calculations`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(calculationData)
+                });
+                
+                if (response.ok) {
+                    console.log('Расчет сохранен');
+                    // Перезагружаем историю
+                    await loadHistory();
+                } else {
+                    console.error('Не удалось сохранить расчет');
+                }
+            } catch (error) {
+                console.error('Ошибка сохранения расчета:', error);
+            }
+        }
+        
+        // Генерация UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
         
         // Кнопка выхода
         document.getElementById('logoutBtn').addEventListener('click', () => {

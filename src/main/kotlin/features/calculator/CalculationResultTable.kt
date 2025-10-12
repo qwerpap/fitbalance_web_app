@@ -11,4 +11,5 @@ object CalculationResultTable : Table("calculation_result") {
     val fat = double("fat")
     val carbs = double("carbs")
     val recommendedCalories = double("recommended_calories")
+    val createdAt = long("created_at") // Временная метка
 }

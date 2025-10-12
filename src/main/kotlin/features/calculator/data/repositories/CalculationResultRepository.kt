@@ -18,6 +18,7 @@ object CalculationResultRepository {
                 it[fat] = calculation.fat
                 it[carbs] = calculation.carbs
                 it[recommendedCalories] = calculation.recommendedCalories
+                it[createdAt] = calculation.createdAt
             }.resultedValues?.first()?.let { rowToCalculation(it) } ?: calculation
         }
     }
@@ -43,6 +44,7 @@ object CalculationResultRepository {
                 it[fat] = calculation.fat
                 it[carbs] = calculation.carbs
                 it[recommendedCalories] = calculation.recommendedCalories
+                it[createdAt] = calculation.createdAt
             }
 
             if (updatedRows > 0) calculation else null
@@ -63,6 +65,7 @@ object CalculationResultRepository {
             CalculationResultTable
                 .selectAll()
                 .where { CalculationResultTable.userId eq userId }
+                .orderBy(CalculationResultTable.createdAt to SortOrder.DESC)
                 .map { rowToCalculation(it) }
         }
     }
@@ -75,7 +78,8 @@ object CalculationResultRepository {
             protein = row[CalculationResultTable.protein],
             fat = row[CalculationResultTable.fat],
             carbs = row[CalculationResultTable.carbs],
-            recommendedCalories = row[CalculationResultTable.recommendedCalories]
+            recommendedCalories = row[CalculationResultTable.recommendedCalories],
+            createdAt = row[CalculationResultTable.createdAt]
         )
     }
 }

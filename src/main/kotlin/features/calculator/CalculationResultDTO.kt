@@ -10,5 +10,6 @@ data class CalculationResultDTO(
     val protein: Double,
     val fat: Double,
     val carbs: Double,
-    val recommendedCalories: Double
+    val recommendedCalories: Double,
+    val createdAt: Long = System.currentTimeMillis()  // Временная метка в миллисекундах
 )
