@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitBalance - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 20px;
+        }
+        
+        .main-content {
+            background: transparent;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .user-info {
+            margin-top: 20px;
+        }
+        
+        .info-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .role-user {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .role-admin {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        
+        .calculator {
+            margin-bottom: 30px;
+        }
+        
+        .calculator-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .calculator-title {
+            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .form-label {
+            color: #555;
+            font-size: 14px;
+            min-width: 120px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        input[type="number"],
+        select {
+            flex: 1;
+            padding: 10px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            color: #333;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="number"]::placeholder {
+            color: #999;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .calculate-btn {
+            background: #667eea;
+            color: white;
+            border: 2px solid #667eea;
+            padding: 12px 25px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: auto;
+            display: block;
+        }
+        
+        .calculate-btn:hover {
+            background: #5568d3;
+            border-color: #5568d3;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .result-item {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            font-size: 24px;
+        }
+        
+        .admin-panel {
+            margin-top: 40px;
+            padding: 30px;
+            background: rgba(255, 243, 205, 0.8);
+            border-radius: 15px;
+            border: 2px solid #ff9800;
+            display: none;
+        }
+        
+        .admin-panel.show {
+            display: block;
+        }
+        
+        .admin-panel h2 {
+            color: #ff9800;
+        }
+        
+        .users-list {
+            margin-top: 20px;
+        }
+        
+        .user-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            position: relative;
+        }
+        
+        .user-card h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .user-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .user-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .role-select {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .save-role-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .save-role-btn:hover {
+            background: #218838;
+        }
+        
+        .save-role-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar с информацией о пользователе -->
+        <div class="sidebar">
+            <h1>🏋️ FitBalance</h1>
+            <p style="color: #666; margin-bottom: 20px;">Ваш личный фитнес-помощник</p>
+            
+            <div class="user-info" id="userInfo">
+                <div class="info-item">
+                    <span class="info-label">Email</span>
+                    <span class="info-value" id="userEmail">Загрузка...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">ID пользователя</span>
+                    <span class="info-value" id="userId" style="font-size: 12px; word-break: break-all;">Загрузка...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Роль</span>
+                    <span class="role-badge" id="userRole">Загрузка...</span>
+                </div>
+                
+                <button class="logout-btn" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="main-content">
+            <!-- Калькулятор калорий -->
+            <div class="calculator">
+                <h2>📊 Калькулятор калорий</h2>
+                
+                <div class="calculator-card">
+                    <div class="calculator-title">Рассчитать свои нормы</div>
+                    
+                    <form id="calculatorForm">
+                        <div class="form-row">
+                            <label class="form-label">Пол</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="gender" value="male" checked>
+                                    <span>Мужской</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="gender" value="female">
+                                    <span>Женский</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="form-label" for="age">Возраст</label>
+                            <input type="number" id="age" name="age" min="15" max="100" placeholder="25" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="form-label" for="height">Рост</label>
+                            <input type="number" id="height" name="height" min="100" max="250" placeholder="175" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="form-label" for="weight">Вес</label>
+                            <input type="number" id="weight" name="weight" min="30" max="300" step="0.1" placeholder="70" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="form-label" for="activity">Уровень активности</label>
+                            <select id="activity" name="activity" required>
+                                <option value="1.2">Минимальная активность</option>
+                                <option value="1.375" selected>Низкая активность</option>
+                                <option value="1.55">Средняя активность</option>
+                                <option value="1.725">Высокая активность</option>
+                                <option value="1.9">Очень высокая активность</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="form-label" for="pregnancy">Беременность</label>
+                            <select id="pregnancy" name="pregnancy">
+                                <option value="no" selected>Нет</option>
+                                <option value="yes">Да</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="calculate-btn">Показать</button>
+                    </form>
+                </div>
+                
+                <div class="result" id="result">
+                    <h3>Ваша дневная норма калорий:</h3>
+                    <div class="result-item">
+                        <span class="result-value" id="caloriesValue">0</span> ккал/день
+                    </div>
+                    <p style="margin-top: 15px; font-size: 14px; opacity: 0.9;">
+                        Это количество калорий необходимо для поддержания текущего веса при вашем уровне активности.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Панель администратора -->
+            <div class="admin-panel" id="adminPanel">
+                <h2>👑 Панель администратора</h2>
+                <p style="color: #856404; margin-bottom: 20px;">
+                    Эта панель доступна только администраторам. Здесь вы можете просматривать список всех пользователей.
+                </p>
+                
+                <div class="users-list" id="usersList">
+                    <div class="loading">Загрузка списка пользователей...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8080';
+        let currentUser = null;
+        
+        // Проверяем авторизацию при загрузке страницы
+        window.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('authToken');
+            
+            if (!token) {
+                // Если нет токена, редиректим на страницу авторизации
+                window.location.href = '/static/google-auth-test.html';
+                return;
+            }
+            
+            await loadUserInfo(token);
+        });
+        
+        // Загрузка информации о пользователе
+        async function loadUserInfo(token) {
+            try {
+                const response = await fetch(`${API_URL}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showUserInfo(currentUser);
+                    
+                    // Если пользователь - админ, показываем админ-панель
+                    if (currentUser.role === 'admin') {
+                        showAdminPanel();
+                    }
+                } else {
+                    // Токен невалидный или истек
+                    console.log('Токен невалидный, редиректим на авторизацию');
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/static/google-auth-test.html';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки пользователя:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '/static/google-auth-test.html';
+            }
+        }
+        
+        // Отображение информации о пользователе
+        function showUserInfo(user) {
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('userId').textContent = user.id;
+            
+            const roleElement = document.getElementById('userRole');
+            roleElement.textContent = user.role === 'admin' ? 'Администратор' : 'Пользователь';
+            roleElement.className = `role-badge role-${user.role}`;
+        }
+        
+        // Показываем админ-панель
+        async function showAdminPanel() {
+            const adminPanel = document.getElementById('adminPanel');
+            adminPanel.classList.add('show');
+            
+            await loadAllUsers();
+        }
+        
+        // Загрузка списка всех пользователей (только для админов)
+        async function loadAllUsers() {
+            const usersList = document.getElementById('usersList');
+            const token = localStorage.getItem('authToken');
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const users = await response.json();
+                    displayUsers(users);
+                } else {
+                    usersList.innerHTML = '<div class="error">Не удалось загрузить список пользователей</div>';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки пользователей:', error);
+                usersList.innerHTML = '<div class="error">Ошибка загрузки пользователей</div>';
+            }
+        }
+        
+        // Отображение списка пользователей
+        function displayUsers(users) {
+            const usersList = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                usersList.innerHTML = '<p>Нет пользователей</p>';
+                return;
+            }
+            
+            usersList.innerHTML = users.map(user => `
+                <div class="user-card" id="user-${user.id}">
+                    <h4>${user.email}</h4>
+                    <p><strong>ID:</strong> ${user.id}</p>
+                    <p><strong>Текущая роль:</strong> <span class="role-badge role-${user.role}">${user.role === 'admin' ? 'Администратор' : 'Пользователь'}</span></p>
+                    ${user.google_id ? `<p><strong>Google ID:</strong> ${user.google_id}</p>` : ''}
+                    
+                    <div class="user-actions">
+                        <label for="role-${user.id}">Изменить роль:</label>
+                        <select class="role-select" id="role-${user.id}" data-user-id="${user.id}" data-current-role="${user.role}">
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>Пользователь</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Администратор</option>
+                        </select>
+                        <button class="save-role-btn" onclick="updateUserRole('${user.id}')" disabled>Сохранить</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Добавляем обработчики для select элементов
+            users.forEach(user => {
+                const select = document.getElementById(`role-${user.id}`);
+                const saveBtn = select.nextElementSibling;
+                
+                select.addEventListener('change', () => {
+                    if (select.value !== select.dataset.currentRole) {
+                        saveBtn.disabled = false;
+                    } else {
+                        saveBtn.disabled = true;
+                    }
+                });
+            });
+        }
+        
+        // Обновление роли пользователя
+        async function updateUserRole(userId) {
+            const select = document.getElementById(`role-${userId}`);
+            const newRole = select.value;
+            const token = localStorage.getItem('authToken');
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+                
+                if (response.ok) {
+                    // Обновляем UI
+                    select.dataset.currentRole = newRole;
+                    select.nextElementSibling.disabled = true;
+                    
+                    // Обновляем бейдж роли
+                    const userCard = document.getElementById(`user-${userId}`);
+                    const roleBadge = userCard.querySelector('.role-badge');
+                    roleBadge.textContent = newRole === 'admin' ? 'Администратор' : 'Пользователь';
+                    roleBadge.className = `role-badge role-${newRole}`;
+                    
+                    // Если изменили роль текущего пользователя, перезагружаем страницу
+                    if (currentUser && currentUser.id === userId) {
+                        alert('Ваша роль была изменена. Страница будет перезагружена.');
+                        location.reload();
+                    } else {
+                        alert('Роль пользователя успешно обновлена!');
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка при обновлении роли: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Ошибка обновления роли:', error);
+                alert('Ошибка при обновлении роли пользователя');
+            }
+        }
+        
+        // Калькулятор калорий
+        document.getElementById('calculatorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const gender = formData.get('gender');
+            const age = parseInt(formData.get('age'));
+            const weight = parseFloat(formData.get('weight'));
+            const height = parseInt(formData.get('height'));
+            const activity = parseFloat(formData.get('activity'));
+            
+            // Формула Миффлина-Сан Жеора
+            let bmr;
+            if (gender === 'male') {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            } else {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            }
+            
+            const calories = Math.round(bmr * activity);
+            
+            // Показываем результат
+            document.getElementById('caloriesValue').textContent = calories;
+            document.getElementById('result').classList.add('show');
+            
+            // Скроллим к результату
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        
+        // Кнопка выхода
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            sessionStorage.clear();
+            window.location.href = '/static/google-auth-test.html';
+        });
+    </script>
+</body>
+</html>
+

@@ -11,7 +11,7 @@ data class LoginReceiveRemote(
 @Serializable
 data class LoginResponseRemote(
     val id: String,
-    val login: String,
-    val email: String?,
+    val login: String?,
+    val email: String,
     val role: String
 )

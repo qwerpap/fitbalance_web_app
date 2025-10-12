@@ -32,9 +32,11 @@ class RegisterController(private val call: ApplicationCall) {
             Users.insert(
                 UserDTO(
                     id = userId,
+                    googleId = "", // Для обычной регистрации googleId пустой
+                    email = request.email,
                     login = request.login,
                     password = request.password,
-                    email = request.email
+                    role = "user"
                 )
             )
             

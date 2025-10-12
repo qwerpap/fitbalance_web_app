@@ -28,8 +28,8 @@ class LoginController(private val call: ApplicationCall) {
             LoginResponseRemote(
                 id = user.id,
                 login = user.login,
-                email = user.email ?: "",
-                role = user.role ?: "user"
+                email = user.email,
+                role = user.role
             )
         )
     }

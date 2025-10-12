@@ -24,6 +24,17 @@ fun Application.configureRouting() {
         get("/") {
             call.respondText("Welcome to the main page!")
         }
+        
+        get("/test") {
+            call.respondText("Test route works!")
+        }
+        
+        get("/google-url") {
+            val clientId = "275252554843-rcm6g06uujc25t64nlmof78kvjqokbtb.apps.googleusercontent.com"
+            val redirectUri = "http://localhost:8080/auth/google/callback"
+            val googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id=$clientId&redirect_uri=$redirectUri&response_type=code&scope=openid%20email%20profile&access_type=offline"
+            call.respondText(googleAuthUrl)
+        }
 
 
         // Страница регистрации
@@ -159,8 +170,8 @@ fun Application.configureRouting() {
                 LoginResponseRemote(
                     id = userDTO.id,
                     login = userDTO.login,
-                    email = userDTO.email ?: "",
-                    role = userDTO.role ?: "user"
+                    email = userDTO.email,
+                    role = userDTO.role
                 )
             )
         }
@@ -323,6 +334,40 @@ fun Application.configureRouting() {
             } catch (e: Exception) {
                 println("Unexpected error: ${e.message}")
                 call.respond(HttpStatusCode.InternalServerError, "Unexpected error occurred")
+            }
+        }
+
+        // Google OAuth роуты (временно здесь для тестирования)
+        get("/auth/test") {
+            val envTest = System.getenv("GOOGLE_CLIENT_ID")
+            call.respond(mapOf(
+                "message" to "Google Auth routing works!",
+                "env_test" to (envTest ?: "NOT_SET")
+            ))
+        }
+        
+        get("/auth/google/url") {
+            try {
+                val clientId = System.getenv("GOOGLE_CLIENT_ID") 
+                    ?: throw IllegalStateException("GOOGLE_CLIENT_ID not set")
+                val redirectUri = System.getenv("GOOGLE_REDIRECT_URI") 
+                    ?: "http://localhost:8080/auth/google/callback"
+                
+                println("DEBUG: GOOGLE_CLIENT_ID = $clientId")
+                println("DEBUG: GOOGLE_REDIRECT_URI = $redirectUri")
+                
+                val googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth?" +
+                        "client_id=$clientId&" +
+                        "redirect_uri=$redirectUri&" +
+                        "response_type=code&" +
+                        "scope=openid%20email%20profile&" +
+                        "access_type=offline"
+                
+                println("DEBUG: Generated URL = $googleAuthUrl")
+                call.respond(mapOf("url" to googleAuthUrl))
+            } catch (e: Exception) {
+                println("ERROR in /auth/google/url: ${e.message}")
+                call.respond(mapOf("error" to e.message))
             }
         }
 

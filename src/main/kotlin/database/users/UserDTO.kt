@@ -1,10 +1,13 @@
 package com.example.database.users
 
-//data transfer object
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class UserDTO(
-    val id: String,  // Убрали "?" - теперь это non-null тип
-    val login: String,
-    val password: String,
-    val email: String? = null,
-    val role: String? = "user"
+    val id: String,
+    val googleId: String,
+    val email: String,
+    val login: String? = null,
+    val password: String? = null, // Оставляем для обычной авторизации (опционально)
+    val role: String = "user" // "user" или "admin"
 )
